@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Algorithm Trainer",
+  "version": "1.0.0",
+  "description": "Train YouTube's recommendation algorithm with custom presets",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "cookies",
+    "webRequest"
+  ],
+  
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtube.com/*",
+    "http://localhost:5173/*"
+  ],
+  
+  "content_scripts": [{
+    "matches": [
+      "https://www.youtube.com/*", 
+      "https://youtube.com/*",
+      "http://localhost:5173/*"
+    ],
+    "js": ["content/youtube-trainer.js"],
+    "run_at": "document_end"
+  }],
+  
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "YouTube Algorithm Trainer",
+    "default_icon": "assets/icon.svg"
+  },
+  
+  "icons": {
+    "128": "assets/icon.svg"
+  },
+  
+  "web_accessible_resources": [{
+    "resources": ["assets/*"],
+    "matches": [
+      "https://www.youtube.com/*",
+      "http://localhost:5173/*"
+    ]
+  }]
+}
