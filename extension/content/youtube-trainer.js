@@ -25,7 +25,6 @@ class YouTubeAlgorithmTrainer {
       });
     }
     
-    this.setupCrossDomainBridge();
     this.setupMessageListeners();
     
     // Send "I'm alive" signal every 3 seconds to web app
@@ -132,33 +131,6 @@ class YouTubeAlgorithmTrainer {
     console.log('✅ YouTube Algorithm Trainer initialized successfully!');
   }
 
-  setupCrossDomainBridge() {
-    try {
-      // EINFACHE LÖSUNG: Schreibe Extension-Status in localStorage
-      // Die Web-App kann das lesen, auch von anderer Domain
-      const extensionData = {
-        isInstalled: true,
-        isConnected: true,
-        version: '1.0.0',
-        isTraining: this.isTraining,
-        timestamp: Date.now(),
-        domain: 'youtube.com',
-        status: 'ready'
-      };
-      
-      // Schreibe in localStorage (funktioniert cross-domain)
-      localStorage.setItem('yt-trainer-extension-status', JSON.stringify(extensionData));
-      
-      // Auch in profileStorage für Backup
-      sessionStorage.setItem('yt-trainer-extension-status', JSON.stringify(extensionData));
-      
-      console.log('✅ Cross-domain bridge setup complete:', extensionData);
-      
-    } catch (error) {
-      console.error('❌ Error setting up cross-domain bridge:', error);
-    }
-  }
-
   sendAliveSignal() {
     try {
       const aliveData = {
@@ -174,17 +146,12 @@ class YouTubeAlgorithmTrainer {
         searchesPerformed: this.searchesPerformed
       };
       
-      // Update localStorage every 3 seconds
-      localStorage.setItem('yt-trainer-extension-status', JSON.stringify(aliveData));
-      sessionStorage.setItem('yt-trainer-extension-status', JSON.stringify(aliveData));
-      
       // WICHTIG: Sende auch an alle offenen Tabs der Web-App
       // Das funktioniert über BroadcastChannel API
       try {
-        const channel = new BroadcastChannel('yt-trainer-channel');
-        channel.postMessage({
-          type: 'EXTENSION_ALIVE',
-          data: aliveData
+        chrome.runtime.sendMessage({
+          type: 'STATUS_UPDATE',
+          ...aliveData
         });
       } catch (broadcastError) {
         // BroadcastChannel nicht unterstützt, egal
@@ -396,7 +363,14 @@ class YouTubeAlgorithmTrainer {
       await this.typeText(searchBox, query);
       
       // Press Enter
-      searchBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      searchBox.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true
+      }));
       
       // Wait for search results
       await this.waitForElement('ytd-video-renderer', 10000);
