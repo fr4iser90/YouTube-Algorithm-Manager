@@ -6,11 +6,15 @@ interface AnalysisResults {
   historyVideoCount: number;
   recommendedVideoCount: number;
   topKeywords: { term: string; score: number }[];
+  topChannels: { channel: string; count: number }[];
   timestamp: number;
 }
 
+type AnalysisTab = 'keywords' | 'channels';
+
 export function PreTrainingAnalysis() {
   const [results, setResults] = useState<AnalysisResults | null>(null);
+  const [activeTab, setActiveTab] = useState<AnalysisTab>('keywords');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState('');
 
@@ -90,34 +94,60 @@ export function PreTrainingAnalysis() {
             </div>
           </div>
 
-          <h4 className="text-md font-semibold text-white mb-4">Top 20 Keywords</h4>
-          <div style={{ width: '100%', height: 400 }}>
-            <ResponsiveContainer>
-              <BarChart
-                data={results.topKeywords}
-                layout="vertical"
-                margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+          <div>
+            <div className="flex border-b border-gray-700 mb-4">
+              <button
+                onClick={() => setActiveTab('keywords')}
+                className={`px-4 py-2 text-sm font-medium ${
+                  activeTab === 'keywords'
+                    ? 'border-b-2 border-purple-500 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
-                <XAxis type="number" hide />
-                <YAxis
-                  dataKey="term"
-                  type="category"
-                  width={100}
-                  tick={{ fill: '#9CA3AF' }}
-                  axisLine={{ stroke: '#4B5563' }}
-                />
-                <Tooltip
-                  cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
-                  contentStyle={{
-                    backgroundColor: '#1F2937',
-                    borderColor: '#4B5563',
-                    color: '#E5E7EB',
-                  }}
-                />
-                <Legend wrapperStyle={{ color: '#E5E7EB' }} />
-                <Bar dataKey="score" name="TF-IDF Score" fill="#8B5CF6" />
-              </BarChart>
-            </ResponsiveContainer>
+                Top Keywords
+              </button>
+              <button
+                onClick={() => setActiveTab('channels')}
+                className={`px-4 py-2 text-sm font-medium ${
+                  activeTab === 'channels'
+                    ? 'border-b-2 border-purple-500 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Top Channels
+              </button>
+            </div>
+
+            <div style={{ width: '100%', height: 400 }}>
+              {activeTab === 'keywords' && (
+                <ResponsiveContainer>
+                  <BarChart data={results.topKeywords} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="term" type="category" width={120} tick={{ fill: '#9CA3AF' }} axisLine={{ stroke: '#4B5563' }} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
+                      contentStyle={{ backgroundColor: '#1F2937', borderColor: '#4B5563', color: '#E5E7EB' }}
+                    />
+                    <Legend wrapperStyle={{ color: '#E5E7EB' }} />
+                    <Bar dataKey="score" name="TF-IDF Score" fill="#8B5CF6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+              {activeTab === 'channels' && (
+                <ResponsiveContainer>
+                  <BarChart data={results.topChannels} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="channel" type="category" width={150} tick={{ fill: '#9CA3AF' }} axisLine={{ stroke: '#4B5563' }} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
+                      contentStyle={{ backgroundColor: '#1F2937', borderColor: '#4B5563', color: '#E5E7EB' }}
+                    />
+                    <Legend wrapperStyle={{ color: '#E5E7EB' }} />
+                    <Bar dataKey="count" name="Video Count" fill="#A78BFA" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
       )}

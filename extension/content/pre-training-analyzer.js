@@ -107,27 +107,38 @@ class PreTrainingAnalyzer {
 
     const recommendedVideos = this.scrapeRecommended();
 
+    // --- Keyword Analysis ---
     const allVideoData = [
       ...historyVideos,
       ...recommendedVideos.map(v => `${v.title} ${v.channel} ${v.description}`)
     ];
     const documents = allVideoData.map(text => this.tokenize(text));
     const idf = this.calculateIdf(documents);
-
     const allTokens = [].concat(...documents);
     const tf = this.calculateTf(allTokens);
-
     const tfidf = this.calculateTfidf(tf, idf);
-
-    const sortedKeywords = Object.entries(tfidf)
+    const topKeywords = Object.entries(tfidf)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 20)
       .map(([term, score]) => ({ term, score }));
 
+    // --- Channel Analysis ---
+    const channelCounts = {};
+    for (const video of recommendedVideos) {
+      if (video.channel && video.channel !== 'Unknown Channel') {
+        channelCounts[video.channel] = (channelCounts[video.channel] || 0) + 1;
+      }
+    }
+    const topChannels = Object.entries(channelCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 20)
+      .map(([channel, count]) => ({ channel, count }));
+
     const analysisResults = {
       historyVideoCount: historyVideos.length,
       recommendedVideoCount: recommendedVideos.length,
-      topKeywords: sortedKeywords,
+      topKeywords: topKeywords,
+      topChannels: topChannels,
       timestamp: Date.now()
     };
 
