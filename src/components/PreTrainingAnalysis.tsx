@@ -18,6 +18,7 @@ export function PreTrainingAnalysis() {
   const [activeTab, setActiveTab] = useState<AnalysisTab>('keywords');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState('');
+  const [minRecommendations, setMinRecommendations] = useState(100);
 
   useEffect(() => {
     // Load last results on mount
@@ -49,7 +50,7 @@ export function PreTrainingAnalysis() {
     setIsAnalyzing(true);
     setAnalysisStep('Analyzing history...');
     try {
-      await chrome.runtime.sendMessage({ type: 'ANALYZE_PRE_TRAINING' });
+      await chrome.runtime.sendMessage({ type: 'ANALYZE_PRE_TRAINING', preset: { advancedOptions: { minRecommendations } } });
     } catch (error) {
       console.error('Error starting pre-training analysis:', error);
       setIsAnalyzing(false);
@@ -105,18 +106,27 @@ export function PreTrainingAnalysis() {
           <BrainCircuit className="h-5 w-5 text-purple-400" />
           <h3 className="text-lg font-semibold text-white">Algorithm Snapshot</h3>
         </div>
-        <button
-          onClick={startAnalysis}
-          disabled={isAnalyzing}
-          className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors disabled:opacity-50"
-        >
-          {isAnalyzing ? (
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Play className="h-4 w-4" />
-          )}
-          <span>Analyze Now</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <input
+            type="number"
+            value={minRecommendations}
+            onChange={(e) => setMinRecommendations(parseInt(e.target.value, 10))}
+            className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 w-24"
+            placeholder="Min Recs"
+          />
+          <button
+            onClick={startAnalysis}
+            disabled={isAnalyzing}
+            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors disabled:opacity-50"
+          >
+            {isAnalyzing ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+            <span>Analyze Now</span>
+          </button>
+        </div>
       </div>
 
       {isAnalyzing && (
