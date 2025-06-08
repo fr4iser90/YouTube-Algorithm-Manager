@@ -48,6 +48,22 @@ class TrainingManager {
           sendResponse({ success: true });
           break;
           
+        case 'CLEAR_HISTORY':
+          chrome.browsingData.remove({
+            "since": 0
+          }, {
+            "history": true,
+            "downloads": true,
+            "cache": true,
+            "cookies": true,
+            "passwords": true,
+            "formData": true
+          }, () => {
+            console.log('Browsing data cleared');
+            sendResponse({ success: true });
+          });
+          return true; // Indicates that the response is sent asynchronously
+          
         default:
           sendResponse({ success: false, error: 'Unknown message type' });
       }

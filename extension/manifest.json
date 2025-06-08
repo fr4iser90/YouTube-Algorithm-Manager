@@ -23,7 +23,7 @@
       "https://youtube.com/*",
       "http://localhost:5173/*"
     ],
-    "js": ["content/youtube-trainer.js"],
+    "js": ["content/utils.js", "content/watch-score.js", "content/actions.js", "content/helpers.js", "content/youtube-trainer.js"],
     "run_at": "document_end"
   }],
   

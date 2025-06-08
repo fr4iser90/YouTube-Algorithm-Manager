@@ -10,6 +10,7 @@ class YouTubeAlgorithmTrainer {
     this.videosWatched = 0;
     this.searchesPerformed = 0;
     this.recommendations = [];
+    this.watchedVideoIds = [];
     
     // Initialize immediately
     this.init();
@@ -26,6 +27,13 @@ class YouTubeAlgorithmTrainer {
     }
     
     this.setupMessageListeners();
+
+    // Bind helper functions to this context
+    this.sendProgress = sendProgress.bind(this);
+    this.sendError = sendError.bind(this);
+    this.watchVideo = watchVideo.bind(this);
+    this.likeVideo = likeVideo.bind(this);
+    this.subscribeToChannel = subscribeToChannel.bind(this);
     
     // Send "I'm alive" signal every 3 seconds to web app
     setInterval(() => {
@@ -227,6 +235,7 @@ class YouTubeAlgorithmTrainer {
       this.videosWatched = 0;
       this.searchesPerformed = 0;
       this.recommendations = [];
+      this.watchedVideoIds = [];
       
       console.log('🚀 Starting YouTube Algorithm Training with preset:', preset.name);
       
@@ -247,8 +256,13 @@ class YouTubeAlgorithmTrainer {
 
       // Step 2: Clear history if requested
       if (preset.advancedOptions?.clearHistoryFirst) {
-        this.sendProgress(15, 'Preparing browser...');
-        await this.delay(2000);
+        this.sendProgress(15, 'Clearing browsing data...');
+        await new Promise(resolve => {
+          chrome.runtime.sendMessage({ type: 'CLEAR_HISTORY' }, () => {
+            resolve();
+          });
+        });
+        await delay(2000);
       }
       
       // Step 3: Perform searches and watch videos
@@ -263,12 +277,12 @@ class YouTubeAlgorithmTrainer {
         
         try {
           this.sendProgress(stepProgress, `Searching: "${search.query}"`);
-          await this.performSearch(search.query);
+          await performSearch.call(this, search.query);
           
           this.sendProgress(stepProgress + 10, `Watching videos for: "${search.query}"`);
-          await this.watchRecommendedVideos(search.frequency || 2, search.duration || 60);
+          await watchRecommendedVideos.call(this, search.frequency || 2, search.duration || 60);
           
-          await this.humanDelay();
+          await humanDelay();
           
         } catch (error) {
           console.error(`❌ Error in training step ${i + 1}:`, error);
@@ -278,7 +292,7 @@ class YouTubeAlgorithmTrainer {
       
       // Step 4: Extract final recommendations
       this.sendProgress(90, 'Analyzing recommendations...');
-      const finalRecommendations = await this.extractRecommendations();
+      const finalRecommendations = await extractRecommendations.call(this);
       
       // Step 5: Complete
       this.sendProgress(100, 'Training completed!');
@@ -289,13 +303,13 @@ class YouTubeAlgorithmTrainer {
         videosWatched: this.videosWatched,
         searchesPerformed: this.searchesPerformed,
         recommendations: finalRecommendations,
-        bubbleScore: this.calculateBubbleScore(finalRecommendations, preset.targetKeywords || []),
+        bubbleScore: calculateBubbleScore(finalRecommendations, preset.targetKeywords || []),
         language: preset.language || 'en',
         region: preset.region || 'US',
-        categories: this.generateCategories(finalRecommendations)
+        categories: generateCategories(finalRecommendations)
       };
       
-      this.sendResults(results);
+      sendResults(results);
       
       console.log('✅ Training completed successfully!', results);
       
@@ -305,353 +319,6 @@ class YouTubeAlgorithmTrainer {
     } finally {
       this.isTraining = false;
       this.sendAliveSignal(); // Update status
-    }
-  }
-
-  async performSearch(query) {
-    console.log(`🔍 Searching for: "${query}"`);
-    try {
-      // Warte 2 Sekunden, damit YouTube das Suchfeld nachladen kann
-      await this.delay(2000);
-
-      // Versuche bis zu 10x, das Suchfeld zu finden (Polling, rekursiv im gesamten DOM inkl. ShadowRoots)
-      let searchBox = null;
-      for (let attempt = 0; attempt < 10; attempt++) {
-        // Priorisiere name="search_query"
-        searchBox = document.querySelector('input[name="search_query"]');
-        if (searchBox && !!(searchBox.offsetWidth || searchBox.offsetHeight || searchBox.getClientRects().length) && !searchBox.disabled) {
-          break;
-        }
-        // Fallback: Suche nach anderen Attributen
-        const allInputs = Array.from(document.querySelectorAll('input'));
-        searchBox = allInputs.find(
-          el =>
-            !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length) &&
-            !el.disabled &&
-            (
-              (el.placeholder && (el.placeholder.toLowerCase().includes('suchen') || el.placeholder.toLowerCase().includes('search'))) ||
-              (el.className && (el.className.includes('yt-searchbox-input') || el.className.includes('ytSearchboxComponentInput')))
-            )
-        );
-        if (searchBox) break;
-        await this.delay(500);
-      }
-      if (!searchBox) {
-        const allInputs = Array.from(document.querySelectorAll('input'));
-        console.warn('[DEBUG] Keine Suchbox gefunden. Alle Inputs auf der Seite:', allInputs.map(el => ({
-          name: el.name,
-          id: el.id,
-          class: el.className,
-          placeholder: el.placeholder,
-          type: el.type,
-          visible: !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length),
-          disabled: el.disabled
-        })));
-        throw new Error('Suchfeld nicht gefunden (name="search_query", Placeholder "Suchen"/"Search", yt-searchbox-input, ytSearchboxComponentInput, inkl. Shadow DOM)');
-      }
-      console.log('[DEBUG] Suchbox gefunden:', {
-        name: searchBox.name,
-        id: searchBox.id,
-        class: searchBox.className,
-        placeholder: searchBox.placeholder,
-        type: searchBox.type
-      });
-
-      // Clear and type query
-      searchBox.value = '';
-      searchBox.focus();
-      await this.typeText(searchBox, query);
-      
-      // Press Enter
-      searchBox.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true
-      }));
-      
-      // Wait for search results
-      await this.waitForElement('ytd-video-renderer', 10000);
-      
-      this.searchesPerformed++;
-      console.log(`✅ Search completed: "${query}"`);
-      
-    } catch (error) {
-      console.error(`❌ Search failed for "${query}":`, error);
-      throw error;
-    }
-  }
-
-  async watchRecommendedVideos(count, duration) {
-    try {
-      const videoElements = document.querySelectorAll('ytd-video-renderer');
-      const videosToWatch = Math.min(count, videoElements.length, 3); // Max 3 videos
-      
-      console.log(`📺 Watching ${videosToWatch} videos for ${duration}s each`);
-      
-      for (let i = 0; i < videosToWatch; i++) {
-        if (!this.isTraining) break;
-        
-        const videoElement = videoElements[i];
-        const titleElement = videoElement.querySelector('#video-title');
-        const title = titleElement?.textContent?.trim() || `Video ${i + 1}`;
-        
-        console.log(`📺 Watching: "${title}"`);
-        
-        // Click video
-        titleElement?.click();
-        
-        // Wait for video page
-        await this.delay(3000);
-        
-        // Watch video
-        await this.watchVideo(Math.min(duration, 90)); // Max 90 seconds
-        
-        // Random engagement
-        if (Math.random() < 0.3) {
-          await this.likeVideo();
-        }
-        
-        this.videosWatched++;
-        
-        // Go back
-        window.history.back();
-        await this.delay(2000);
-        
-        await this.humanDelay();
-      }
-      
-    } catch (error) {
-      console.error('❌ Error watching videos:', error);
-    }
-  }
-
-  async watchVideo(duration) {
-    try {
-      const video = document.querySelector('video');
-      if (video && video.paused) {
-        video.play();
-      }
-      
-      // Watch for specified duration
-      const watchTime = Math.min(duration, 120) * 1000; // Max 2 minutes
-      await this.delay(watchTime);
-      
-      console.log(`✅ Watched video for ${duration}s`);
-      
-    } catch (error) {
-      console.error('❌ Error watching video:', error);
-    }
-  }
-
-  async likeVideo() {
-    try {
-      await this.delay(1000);
-      const likeButton = document.querySelector('button[aria-label*="like" i]:not([aria-pressed="true"])');
-      if (likeButton) {
-        likeButton.click();
-        console.log('👍 Liked video');
-      }
-    } catch (error) {
-      console.log('Could not like video:', error);
-    }
-  }
-
-  async extractRecommendations() {
-    try {
-      // Go to YouTube home
-      window.location.href = 'https://www.youtube.com';
-      await this.delay(3000);
-      
-      const recommendations = [];
-      const recElements = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
-      
-      recElements.forEach((element, index) => {
-        if (index >= 15) return; // Limit to 15
-        
-        const titleElement = element.querySelector('#video-title, h3 a');
-        const channelElement = element.querySelector('#channel-name a, .ytd-channel-name a');
-        
-        if (titleElement && channelElement) {
-          recommendations.push({
-            title: titleElement.textContent?.trim() || '',
-            channel: channelElement.textContent?.trim() || '',
-            position: index + 1
-          });
-        }
-      });
-      
-      console.log(`📊 Extracted ${recommendations.length} recommendations`);
-      return recommendations;
-      
-    } catch (error) {
-      console.error('❌ Error extracting recommendations:', error);
-      return [];
-    }
-  }
-
-  generateCategories(recommendations) {
-    const categories = {};
-    const totalRecs = recommendations.length;
-    
-    recommendations.forEach(rec => {
-      const title = rec.title.toLowerCase();
-      let category = 'other';
-      
-      if (title.includes('tech') || title.includes('programming')) category = 'tech';
-      else if (title.includes('music')) category = 'music';
-      else if (title.includes('game')) category = 'gaming';
-      else if (title.includes('news')) category = 'news';
-      else if (title.includes('tutorial')) category = 'education';
-      
-      categories[category] = (categories[category] || 0) + 1;
-    });
-    
-    return Object.entries(categories).map(([category, count]) => ({
-      category,
-      percentage: Math.round((count / totalRecs) * 100),
-      count
-    }));
-  }
-
-  calculateBubbleScore(recommendations, targetKeywords) {
-    if (recommendations.length === 0 || targetKeywords.length === 0) return 0;
-    
-    const targetMatches = recommendations.filter(rec => 
-      targetKeywords.some(keyword => 
-        rec.title.toLowerCase().includes(keyword.toLowerCase())
-      )
-    ).length;
-    
-    return Math.round((targetMatches / recommendations.length) * 100);
-  }
-
-  // Utility methods
-  async waitForElement(selector, timeout = 5000) {
-    return new Promise((resolve, reject) => {
-      const element = document.querySelector(selector);
-      if (element) return resolve(element);
-      
-      const observer = new MutationObserver(() => {
-        const element = document.querySelector(selector);
-        if (element) {
-          observer.disconnect();
-          resolve(element);
-        }
-      });
-      
-      observer.observe(document.body, { childList: true, subtree: true });
-      
-      setTimeout(() => {
-        observer.disconnect();
-        reject(new Error(`Element ${selector} not found`));
-      }, timeout);
-    });
-  }
-
-  async typeText(element, text) {
-    for (const char of text) {
-      element.value += char;
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-      await this.delay(50 + Math.random() * 100);
-    }
-  }
-
-  async humanDelay() {
-    const delay = 2000 + Math.random() * 3000; // 2-5 seconds
-    await this.delay(delay);
-  }
-
-  async delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  sendResults(results) {
-    try {
-      // Send to web app via localStorage
-      localStorage.setItem('yt-trainer-results', JSON.stringify({
-        ...results,
-        timestamp: Date.now()
-      }));
-      
-      // Send via postMessage
-      window.postMessage({ type: 'YT_TRAINER_COMPLETED', results }, '*');
-      
-      // Send via BroadcastChannel
-      try {
-        const channel = new BroadcastChannel('yt-trainer-channel');
-        channel.postMessage({
-          type: 'TRAINING_COMPLETED',
-          results
-        });
-      } catch (error) {
-        // BroadcastChannel not supported
-      }
-      
-      console.log('📤 Results sent to web app');
-      
-    } catch (error) {
-      console.error('❌ Error sending results:', error);
-    }
-  }
-
-  sendError(error) {
-    try {
-      localStorage.setItem('yt-trainer-error', JSON.stringify({
-        error,
-        timestamp: Date.now()
-      }));
-      
-      window.postMessage({ type: 'YT_TRAINER_ERROR', error }, '*');
-      
-      try {
-        const channel = new BroadcastChannel('yt-trainer-channel');
-        channel.postMessage({
-          type: 'TRAINING_ERROR',
-          error
-        });
-      } catch (broadcastError) {
-        // BroadcastChannel not supported
-      }
-      
-    } catch (err) {
-      console.error('❌ Error sending error:', err);
-    }
-  }
-
-  sendProgress(progress, message) {
-    try {
-      this.progress = progress;
-      
-      const progressData = {
-        progress,
-        message,
-        videosWatched: this.videosWatched,
-        searchesPerformed: this.searchesPerformed,
-        timestamp: Date.now()
-      };
-      
-      localStorage.setItem('yt-trainer-progress', JSON.stringify(progressData));
-      window.postMessage({ type: 'YT_TRAINER_PROGRESS', detail: progressData }, '*');
-      
-      // Send via BroadcastChannel
-      try {
-        const channel = new BroadcastChannel('yt-trainer-channel');
-        channel.postMessage({
-          type: 'TRAINING_PROGRESS',
-          progress: progressData
-        });
-      } catch (error) {
-        // BroadcastChannel not supported
-      }
-      
-      // Update alive signal with progress
-      this.sendAliveSignal();
-      
-    } catch (error) {
-      console.error('❌ Error sending progress:', error);
     }
   }
 
