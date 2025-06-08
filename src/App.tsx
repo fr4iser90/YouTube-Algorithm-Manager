@@ -10,6 +10,7 @@ import { YouTubeAutomation } from './components/YouTubeAutomation';
 import { RealTimeAnalytics } from './components/RealTimeAnalytics';
 import { AnonymousMode } from './components/AnonymousMode';
 import { MLAnalytics } from './components/MLAnalytics';
+import { PreTrainingAnalysis } from './components/PreTrainingAnalysis';
 import { ExtensionBridge, ExtensionBridgeHandle } from './components/ExtensionBridge';
 import { useLocalStorage, dateReviver } from './hooks/useLocalStorage';
 /* Dynamically load presets from GitHub manifest */
@@ -428,6 +429,11 @@ function App() {
             />
           </div>
         )}
+
+        {/* Analysis and Profile Management */}
+        <div className="mb-8">
+          <PreTrainingAnalysis />
+        </div>
 
         {/* Analysis and Profile Management */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">

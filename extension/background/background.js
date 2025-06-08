@@ -49,20 +49,34 @@ class TrainingManager {
           break;
           
         case 'CLEAR_HISTORY':
-          chrome.browsingData.remove({
-            "since": 0
-          }, {
+          if (chrome.browsingData) {
+            chrome.browsingData.remove({
+              "since": 0
+            }, {
             "history": true,
             "downloads": true,
             "cache": true,
             "cookies": true,
             "passwords": true,
             "formData": true
-          }, () => {
-            console.log('Browsing data cleared');
-            sendResponse({ success: true });
-          });
+            }, () => {
+              console.log('Browsing data cleared');
+              sendResponse({ success: true });
+            });
+          } else {
+            console.error('chrome.browsingData API is not available.');
+            sendResponse({ success: false, error: 'browsingData API not available' });
+          }
           return true; // Indicates that the response is sent asynchronously
+
+        case 'ANALYZE_PRE_TRAINING':
+          this.startPreTrainingAnalysis(sendResponse);
+          return true; // Indicates that the response is sent asynchronously
+
+        case 'HISTORY_ANALYSIS_COMPLETE':
+          this.handleHistoryAnalysisComplete(message.results);
+          sendResponse({ success: true });
+          break;
           
         default:
           sendResponse({ success: false, error: 'Unknown message type' });
@@ -155,6 +169,46 @@ class TrainingManager {
     }
 
     this.trainingTab = null;
+  }
+
+  async startPreTrainingAnalysis(sendResponse) {
+    try {
+      const historyUrl = 'https://www.youtube.com/feed/history';
+      const [historyTab] = await chrome.tabs.query({ url: historyUrl });
+      if (historyTab) {
+        await chrome.tabs.update(historyTab.id, { active: true });
+      } else {
+        await chrome.tabs.create({ url: historyUrl });
+      }
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('Error starting pre-training analysis:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+  }
+
+  async handleHistoryAnalysisComplete(results) {
+    try {
+      const homepageUrl = 'https://www.youtube.com/';
+      const [homepageTab] = await chrome.tabs.query({ url: homepageUrl });
+      if (homepageTab) {
+        await chrome.tabs.update(homepageTab.id, { active: true });
+        await this.waitForTabLoad(homepageTab.id);
+        chrome.tabs.sendMessage(homepageTab.id, {
+          type: 'ANALYZE_RECOMMENDATIONS',
+          historyVideos: results.historyVideos
+        });
+      } else {
+        const newTab = await chrome.tabs.create({ url: homepageUrl });
+        await this.waitForTabLoad(newTab.id);
+        chrome.tabs.sendMessage(newTab.id, {
+          type: 'ANALYZE_RECOMMENDATIONS',
+          historyVideos: results.historyVideos
+        });
+      }
+    } catch (error) {
+      console.error('Error handling history analysis complete:', error);
+    }
   }
 
   handleTrainingProgress(progressData) {

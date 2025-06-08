@@ -82,14 +82,19 @@ async function watchVideo(duration) {
     if (video.paused) {
       video.play();
     }
-    
-    const adSkipInterval = setInterval(() => {
-      const skipButton = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern');
-      if (skipButton) {
-        skipButton.click();
-        console.log('Ad skipped');
-      }
-    }, 500);
+
+    let adSkipInterval;
+    if (this.currentPreset.advancedOptions?.skipAds) {
+      adSkipInterval = setInterval(() => {
+        const skipButton = document.querySelector(
+          '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, button[aria-label="Skip Ad"]'
+        );
+        if (skipButton) {
+          skipButton.click();
+          console.log('Ad skipped');
+        }
+      }, 500);
+    }
     
     const watchTime = Math.min(duration, 120) * 1000;
     const watchdog = setTimeout(() => {
@@ -100,7 +105,9 @@ async function watchVideo(duration) {
     await delay(watchTime);
     
     clearTimeout(watchdog);
-    clearInterval(adSkipInterval);
+    if (adSkipInterval) {
+      clearInterval(adSkipInterval);
+    }
     
     console.log(`✅ Watched video for ${duration}s`);
     

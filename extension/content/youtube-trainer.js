@@ -276,11 +276,11 @@ class YouTubeAlgorithmTrainer {
         const stepProgress = 20 + (i / totalSteps) * 60;
         
         try {
-          this.sendProgress(stepProgress, `Searching: "${search.query}"`);
           await performSearch.call(this, search.query);
+          this.sendProgress(stepProgress, `Searching: "${search.query}"`);
           
-          this.sendProgress(stepProgress + 10, `Watching videos for: "${search.query}"`);
           await watchRecommendedVideos.call(this, search.frequency || 2, search.duration || 60);
+          this.sendProgress(stepProgress + 10, `Watching videos for: "${search.query}"`);
           
           await humanDelay();
           
