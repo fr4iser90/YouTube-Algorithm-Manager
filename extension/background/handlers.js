@@ -1,4 +1,4 @@
-import { trainingManager } from './background.js';
+import { trainingManager, profileManager } from './background.js';
 
 export function setupMessageHandlers() {
   // Handle messages from content script and popup
@@ -73,54 +73,18 @@ export function setupMessageHandlers() {
         sendResponse({ success: true });
         break;
 
-      case 'SAVE_PROFILE':
-        const profileContent = JSON.stringify(message.profile, null, 2);
-        const url = 'data:application/json;charset=utf-8,' + encodeURIComponent(profileContent);
-
-        chrome.downloads.download({
-          url: url,
-          filename: `profiles/${message.profile.id}.json`,
-          saveAs: true
-        }, (downloadId) => {
-          if (chrome.runtime.lastError) {
-            console.error('Error downloading profile:', chrome.runtime.lastError);
-            sendResponse({ success: false, error: 'Failed to download profile.' });
-          } else {
-            console.log('Profile downloaded with ID:', downloadId);
-            // We can't read the manifest directly, so we'll just log instructions
-            // to the user on how to update it.
-            console.log("\n--- UPDATE MANIFEST ---");
-            console.log("2. Open 'profiles/manifest.json' and add a new entry for your profile. It should look like this:");
-            console.log(JSON.stringify({
-              id: message.profile.id,
-              name: message.profile.name,
-              desc: message.profile.desc,
-              avatar: message.profile.avatar,
-              category: message.profile.category,
-              path: `profiles/${message.profile.id}.json`
-            }, null, 2));
-            alert("The profile JSON has been downloaded. Please save it in the 'profiles' directory. Instructions to update the manifest have been logged to the developer console (F12).");
-            sendResponse({ success: true, message: 'Profile downloaded. Manifest instructions logged to console.' });
-          }
+      case 'GET_PROFILES':
+        profileManager.getProfiles().then(profiles => {
+          sendResponse({ success: true, profiles });
         });
-        return true; // Indicates that the response is sent asynchronously
-        
-      case 'SAVE_BUBBLE_PROFILE':
-        const profileContentBubble = JSON.stringify(message.profile, null, 2);
-        const urlBubble = 'data:application/json;charset=utf-8,' + encodeURIComponent(profileContentBubble);
+        return true;
 
-        chrome.downloads.download({
-          url: urlBubble,
-          filename: `profiles/${message.profile.id}.json`,
-          saveAs: true
-        }, (downloadId) => {
-          if (chrome.runtime.lastError) {
-            console.error('Error downloading profile:', chrome.runtime.lastError);
-            sendResponse({ success: false, error: 'Failed to download profile.' });
-          } else {
-            console.log('Profile downloaded with ID:', downloadId);
-            sendResponse({ success: true, message: 'Profile downloaded.' });
-          }
+      case 'SAVE_PROFILES':
+        profileManager.getProfiles().then(existingProfiles => {
+          const updatedProfiles = [...existingProfiles, ...message.profiles];
+          profileManager.saveProfiles(updatedProfiles).then(response => {
+            sendResponse(response);
+          });
         });
         return true;
 

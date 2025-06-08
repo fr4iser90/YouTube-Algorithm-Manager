@@ -1,8 +1,10 @@
 import { TrainingManager } from './manager.js';
 import { setupMessageHandlers } from './handlers.js';
+import { ProfileManager } from './profile-manager.js';
 
-// Initialize training manager
+// Initialize managers
 export const trainingManager = new TrainingManager();
+export const profileManager = new ProfileManager();
 
 // Setup message handlers
 setupMessageHandlers();

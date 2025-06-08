@@ -8,7 +8,7 @@
   let consecutiveStops = 0;
   const maxConsecutiveStops = 3; // Stop after 3 scrolls with no new videos
 
-  for (let i = 0; i < 30; i++) { // Generous limit
+  for (let i = 0; i < 300; i++) { // Very generous limit
     lastVideoCount = document.querySelectorAll('#video-title').length;
     
     // Scroll the main document element

@@ -119,12 +119,18 @@ export function PreTrainingAnalysis() {
     };
 
     try {
-      const saved = localStorage.getItem('youtube-profiles');
-      const profiles = saved ? JSON.parse(saved) : [];
-      const updatedProfiles = [...profiles, newProfile];
-      localStorage.setItem('youtube-profiles', JSON.stringify(updatedProfiles));
-      window.dispatchEvent(new CustomEvent('profiles-updated'));
-      alert(`Profile "${profileName}" saved successfully! You can now access it in the Profile Manager.`);
+      chrome.runtime.sendMessage({
+        type: 'SAVE_PROFILES',
+        profiles: [newProfile]
+      }, (response) => {
+        if (response && response.success) {
+          window.dispatchEvent(new CustomEvent('profiles-updated'));
+          alert(`Profile "${profileName}" saved successfully! You can now access it in the Profile Manager.`);
+        } else {
+          console.error('Failed to save profile:', response?.error);
+          alert('Error saving profile. See console for details.');
+        }
+      });
     } catch (error) {
       console.error('Failed to save profile:', error);
       alert('Error saving profile. See console for details.');

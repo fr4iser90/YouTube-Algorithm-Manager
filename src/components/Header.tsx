@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Brain, Download, Upload, Settings, Save, Shield, Eye, EyeOff, AlertTriangle, CheckCircle, X, Chrome } from 'lucide-react';
-import { ProfileLoader } from './BubbleProfileManager';
+import { BubbleProfileManager } from './BubbleProfileManager';
 import { BubblePreset, AlgorithmState } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,8 +10,8 @@ interface HeaderProps {
   onSettings: () => void;
   currentPreset?: BubblePreset;
   currentAlgorithmState?: AlgorithmState;
-  onLoadProfile?: (profile: any) => void;
-  onCreateProfile?: () => void;
+  onLoadProfile: (profile: any) => void;
+  onCreateProfile: () => void;
   savedProfiles: any[];
   setSavedProfiles: (profiles: any[]) => void;
 }
@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   savedProfiles,
   setSavedProfiles
 }) => {
-  const [showProfileLoader, setShowProfileLoader] = useState(false);
+  const [isProfileManagerOpen, setIsProfileManagerOpen] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(false);
 
   // Security Check - Extension focused
@@ -350,11 +350,11 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
               
               <button
-                onClick={() => setShowProfileLoader(true)}
+                onClick={() => setIsProfileManagerOpen(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
               >
                 <Save className="h-4 w-4" />
-                <span>Load Profile</span>
+                <span>Profile Manager</span>
               </button>
               
               <button
@@ -385,17 +385,11 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
 
-      <ProfileLoader
-        isVisible={showProfileLoader}
-        onClose={() => setShowProfileLoader(false)}
-        onLoadProfile={(profile) => {
-          onLoadProfile?.(profile);
-          setShowProfileLoader(false);
-        }}
-        onCreateProfile={() => {
-          onCreateProfile?.();
-          setShowProfileLoader(false);
-        }}
+      <BubbleProfileManager
+        isVisible={isProfileManagerOpen}
+        onClose={() => setIsProfileManagerOpen(false)}
+        onLoadProfile={onLoadProfile}
+        onCreateProfile={onCreateProfile}
         currentPreset={currentPreset}
         currentAlgorithmState={currentAlgorithmState}
         savedProfiles={savedProfiles}

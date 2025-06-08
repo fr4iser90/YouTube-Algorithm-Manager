@@ -29,6 +29,7 @@ interface ExtensionBridgeProps {
 export interface ExtensionBridgeHandle {
   startTraining: (preset: BubblePreset) => Promise<boolean>;
   stopTraining: () => Promise<void>;
+  openProfileManager: () => void;
 }
 
 export const ExtensionBridge = forwardRef<ExtensionBridgeHandle, ExtensionBridgeProps>(({
@@ -142,9 +143,13 @@ export const ExtensionBridge = forwardRef<ExtensionBridgeHandle, ExtensionBridge
     }
   };
 
-  useImperativeHandle(ref, () => ({
+useImperativeHandle(ref, () => ({
     startTraining: startTrainingWithExtension,
     stopTraining: stopTrainingWithExtension,
+    openProfileManager: () => {
+      // This is a placeholder, the actual logic will be handled by the parent component
+      console.log('Opening profile manager from extension bridge');
+    }
   }));
 
   const openExtensionDownload = () => {

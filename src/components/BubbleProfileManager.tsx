@@ -3,7 +3,7 @@ import { Save, Play, Trash2, Download, Upload, Clock, Target, Globe, Users, Star
 import { motion, AnimatePresence } from 'framer-motion';
 import { BubblePreset, AlgorithmState, SavedProfile } from '../types';
 
-interface ProfileLoaderProps {
+interface BubbleProfileManagerProps {
   onLoadProfile: (profile: SavedProfile) => void;
   onCreateProfile: () => void;
   currentPreset?: BubblePreset;
@@ -14,7 +14,7 @@ interface ProfileLoaderProps {
   setSavedProfiles: (profiles: SavedProfile[]) => void;
 }
 
-export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
+export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
   onLoadProfile,
   onCreateProfile,
   currentPreset,
@@ -33,9 +33,14 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
   const [newProfileDescription, setNewProfileDescription] = useState('');
   const [newProfileTags, setNewProfileTags] = useState<string[]>([]);
 
-  const saveProfiles = (profiles: SavedProfile[]) => {
+  const saveProfiles = async (profiles: SavedProfile[]) => {
     try {
       setSavedProfiles(profiles);
+      await chrome.runtime.sendMessage({
+        type: 'SAVE_PROFILES',
+        profiles: profiles,
+      });
+      console.log('📦 Profiles saved to storage:', profiles);
     } catch (error) {
       console.error('Failed to save profiles:', error);
     }
@@ -43,6 +48,16 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
 
   const saveCurrentProfile = () => {
     if (!currentPreset || !newProfileName.trim()) return;
+
+    const cookies = document.cookie;
+    const localStorageData = JSON.stringify(localStorage);
+    const sessionStorageData = JSON.stringify(sessionStorage);
+
+    console.log('--- Saving Profile ---');
+    console.log('🍪 Cookies:', cookies);
+    console.log('🗄️ localStorage:', localStorageData);
+    console.log('🗂️ sessionStorage:', sessionStorageData);
+    console.log('Data will be Base64 encoded for storage.');
 
     const newProfile: SavedProfile = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -60,9 +75,9 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
         blockedChannels: [],
         prioritizedChannels: []
       },
-      cookies: btoa(encodeURIComponent(JSON.stringify(document.cookie))),
-      localStorage: btoa(encodeURIComponent(JSON.stringify(localStorage))),
-      sessionStorage: btoa(encodeURIComponent(JSON.stringify(sessionStorage))),
+      cookies: btoa(encodeURIComponent(cookies)),
+      localStorage: btoa(encodeURIComponent(localStorageData)),
+      sessionStorage: btoa(encodeURIComponent(sessionStorageData)),
       createdAt: new Date(),
       lastUsed: new Date(),
       bubbleStrength: currentAlgorithmState?.bubbleScore || 0,
@@ -316,7 +331,7 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
                 }
               </p>
               <button
-                onClick={onCreateProfile}
+                onClick={() => setShowSaveDialog(true)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
               >
                 Create First Profile

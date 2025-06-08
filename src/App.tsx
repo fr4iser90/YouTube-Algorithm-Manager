@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { PresetCard } from './components/PresetCard';
 import { PresetEditor } from './components/PresetEditor';
@@ -14,13 +14,14 @@ import { PreTrainingAnalysis } from './components/PreTrainingAnalysis';
 import { ExtensionBridge, ExtensionBridgeHandle } from './components/ExtensionBridge';
 import { useLocalStorage, dateReviver } from './hooks/useLocalStorage';
 /* Dynamically load presets from GitHub manifest */
-import { BubblePreset, TrainingProfile, AlgorithmState } from './types';
+import { BubblePreset, TrainingProfile, AlgorithmState, SavedProfile } from './types';
 import { Plus, Filter, Search, Settings as SettingsIcon, Brain, Shield, Chrome } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function App() {
   const [presets, setPresets, presetsLoading] = useLocalStorage<BubblePreset[]>('youtube-presets', []);
-  const [savedProfiles, setSavedProfiles, profilesLoading] = useLocalStorage<any[]>('youtube-profiles', []);
+  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
+const [profilesLoading, setProfilesLoading] = useState(true);
   const [algorithmHistory, setAlgorithmHistory, historyLoading] = useLocalStorage<AlgorithmState[]>('algorithm-history', []);
   const [browserSettings, setBrowserSettings, settingsLoading] = useLocalStorage<any>('browser-settings', {});
   const [currentProfile, setcurrentProfile] = useState<TrainingProfile | null>(null);
@@ -35,6 +36,28 @@ function App() {
   const [activeProfileId, setactiveProfileId] = useState<string | null>(null);
   const [extensionTrainingActive, setExtensionTrainingActive] = useState(false);
   const extensionBridgeRef = useRef<ExtensionBridgeHandle>(null);
+
+  const loadProfiles = useCallback(async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'GET_PROFILES' });
+      console.log('📦 Profiles received from background:', response);
+      if (response.success) {
+        setSavedProfiles(response.profiles);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profiles:', error);
+    } finally {
+      setProfilesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfiles();
+    window.addEventListener('profiles-updated', loadProfiles);
+    return () => {
+      window.removeEventListener('profiles-updated', loadProfiles);
+    };
+  }, [loadProfiles]);
 
   // Initialize with template presets from GitHub if none exist
   useEffect(() => {
@@ -195,6 +218,12 @@ function App() {
     setIsEditorOpen(true);
   };
 
+  const handleCreateProfile = () => {
+    if (extensionBridgeRef.current) {
+      extensionBridgeRef.current.openProfileManager();
+    }
+  };
+
   const handleSavePreset = (preset: BubblePreset) => {
     if (editingPreset) {
       // Update existing preset
@@ -325,7 +354,7 @@ function App() {
         currentPreset={currentPreset}
         currentAlgorithmState={currentAlgorithmState}
         onLoadProfile={handleLoadProfile}
-        onCreateProfile={handleCreatePreset}
+        onCreateProfile={handleCreateProfile}
         savedProfiles={savedProfiles}
         setSavedProfiles={setSavedProfiles}
       />
