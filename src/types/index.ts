@@ -88,3 +88,22 @@ export interface TrainingProfile {
   language: string;
   region: string;
 }
+
+export interface SavedProfile {
+  id: string;
+  name: string;
+  description: string;
+  preset: BubblePreset;
+  algorithmState: AlgorithmState;
+  cookies: string;
+  localStorage: string;
+  sessionStorage: string;
+  createdAt: Date;
+  lastUsed: Date;
+  bubbleStrength: number;
+  totalVideosWatched: number;
+  totalSearches: number;
+  trainingHours: number;
+  isActive: boolean;
+  tags: string[];
+}

@@ -19,8 +19,10 @@ import { Plus, Filter, Search, Settings as SettingsIcon, Brain, Shield, Chrome }
 import { motion } from 'framer-motion';
 
 function App() {
-  const [presets, setPresets] = useLocalStorage<BubblePreset[]>('youtube-presets', []);
-  const [algorithmHistory, setAlgorithmHistory] = useLocalStorage<AlgorithmState[]>('algorithm-history', []);
+  const [presets, setPresets, presetsLoading] = useLocalStorage<BubblePreset[]>('youtube-presets', []);
+  const [savedProfiles, setSavedProfiles, profilesLoading] = useLocalStorage<any[]>('youtube-profiles', []);
+  const [algorithmHistory, setAlgorithmHistory, historyLoading] = useLocalStorage<AlgorithmState[]>('algorithm-history', []);
+  const [browserSettings, setBrowserSettings, settingsLoading] = useLocalStorage<any>('browser-settings', {});
   const [currentProfile, setcurrentProfile] = useState<TrainingProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -28,7 +30,6 @@ function App() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<BubblePreset | undefined>(undefined);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [browserSettings, setBrowserSettings] = useState<any>({});
   const [anonymousConfig, setAnonymousConfig] = useState<any>({});
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [activeProfileId, setactiveProfileId] = useState<string | null>(null);
@@ -64,12 +65,12 @@ function App() {
 
   // Auto-load last active profile on startup
   useEffect(() => {
+    if (profilesLoading) return; // Wait for profiles to load
+
     const autoLoadProfile = () => {
       try {
-        const savedProfiles = localStorage.getItem('youtube-profiles');
         if (savedProfiles) {
-          const profiles = JSON.parse(savedProfiles, dateReviver);
-          const activeProfile = profiles.find((s: any) => s.isActive);
+          const activeProfile = savedProfiles.find((s: any) => s.isActive);
           
           if (activeProfile && browserSettings.bubbleLoadStrategy === 'quick') {
             console.log('🚀 Auto-loading active profile:', activeProfile.name);
@@ -84,7 +85,25 @@ function App() {
     // Auto-load after a short delay to ensure components are ready
     const timer = setTimeout(autoLoadProfile, 1000);
     return () => clearTimeout(timer);
-  }, [browserSettings.bubbleLoadStrategy]);
+  }, [browserSettings.bubbleLoadStrategy, savedProfiles, profilesLoading]);
+
+  // Auto-backup profiles on change
+  useEffect(() => {
+    if (browserSettings.autoBackup && presets.length > 0) {
+      console.log('Detected profile change, triggering auto-backup...');
+      const dataStr = JSON.stringify(presets, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.download = `youtube-profiles-backup-${timestamp}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  }, [presets, browserSettings.autoBackup]);
 
   const loadProfileData = (profile: any) => {
     try {
@@ -231,6 +250,7 @@ function App() {
   const handleExport = () => {
     const data = {
       presets,
+      savedProfiles,
       algorithmHistory,
       browserSettings,
       anonymousConfig,
@@ -259,6 +279,7 @@ function App() {
           try {
             const data = JSON.parse(e.target?.result as string, dateReviver);
             if (data.presets) setPresets(data.presets);
+            if (data.savedProfiles) setSavedProfiles(data.savedProfiles);
             if (data.algorithmHistory) setAlgorithmHistory(data.algorithmHistory);
             if (data.browserSettings) setBrowserSettings(data.browserSettings);
             if (data.anonymousConfig) setAnonymousConfig(data.anonymousConfig);
@@ -287,6 +308,14 @@ function App() {
   const availableLanguages = Array.from(new Set(presets.map(p => p.language || 'en')));
   const currentPreset = currentProfile ? presets.find(p => p.id === currentProfile.presetId) : undefined;
 
+  if (presetsLoading || historyLoading || settingsLoading || profilesLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-lg">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-900">
       <Header
@@ -297,6 +326,8 @@ function App() {
         currentAlgorithmState={currentAlgorithmState}
         onLoadProfile={handleLoadProfile}
         onCreateProfile={handleCreatePreset}
+        savedProfiles={savedProfiles}
+        setSavedProfiles={setSavedProfiles}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

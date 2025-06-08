@@ -61,42 +61,74 @@ export function PreTrainingAnalysis() {
   const saveAsProfile = () => {
     if (!results) return;
 
-    const profileName = prompt('Enter a name for this new profile:', 'My Custom Profile');
+    const profileName = prompt('Enter a name for this new profile:', 'Analyzed Profile');
     if (!profileName) return;
 
-    const newProfile = {
-      id: `custom-${Date.now()}`,
-      name: profileName,
-      desc: `Profile generated from analysis on ${new Date(results.timestamp).toLocaleString()}`,
-      avatar: '🔬',
-      category: 'custom',
-      language: 'en',
-      region: 'US',
-      searches: results.topKeywords.map(kw => ({
-        query: kw.term,
-        frequency: 2,
-        duration: 60
-      })),
-      targetKeywords: results.topKeywords.map(kw => kw.term),
-      avoidKeywords: [],
-      trainingDuration: 15,
-      advancedOptions: {
-        clearHistoryFirst: true,
-        useIncognito: true,
-        simulateRealTiming: true,
-        engagementRate: 0.4,
-        skipAds: true
-      }
+    const newProfilePreset = {
+        id: `custom-${Date.now()}`,
+        name: profileName,
+        description: `Generated from analysis on ${new Date(results.timestamp).toLocaleString()}`,
+        color: '#8B5CF6',
+        category: 'custom',
+        language: 'en',
+        region: 'US',
+        searches: results.topKeywords.slice(0, 5).map(kw => ({
+            query: kw.term,
+            frequency: 2,
+            duration: 60
+        })),
+        targetKeywords: results.topKeywords.map(kw => kw.term),
+        avoidKeywords: [],
+        trainingDuration: 15,
+        advancedOptions: {
+            clearHistoryFirst: true,
+            useIncognito: true,
+            simulateRealTiming: true,
+            engagementRate: 0.4,
+            skipAds: true
+        }
     };
 
-    // Send to background script to save
-    chrome.runtime.sendMessage({ type: 'SAVE_PROFILE', profile: newProfile }, (response) => {
-      if (response.success) {
-        alert(`Profile "${profileName}" saved successfully!`);
-      } else {
-        alert(`Error saving profile: ${response.error}`);
-      }
-    });
+    const newProfile = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      name: profileName,
+      description: `Profile generated from analysis on ${new Date(results.timestamp).toLocaleString()}`,
+      preset: newProfilePreset,
+      algorithmState: {
+        timestamp: new Date(),
+        recommendations: [],
+        categories: [],
+        sentiment: 'neutral',
+        bubbleScore: 0,
+        language: 'en',
+        region: 'US',
+        blockedChannels: [],
+        prioritizedChannels: []
+      },
+      cookies: btoa(encodeURIComponent(JSON.stringify(document.cookie))),
+      localStorage: btoa(encodeURIComponent(JSON.stringify(localStorage))),
+      sessionStorage: btoa(encodeURIComponent(JSON.stringify(sessionStorage))),
+      createdAt: new Date(),
+      lastUsed: new Date(),
+      bubbleStrength: 0,
+      totalVideosWatched: results.historyVideoCount,
+      totalSearches: 0,
+      trainingHours: 0,
+      isActive: false,
+      tags: ['analyzed', ...results.topKeywords.slice(0, 4).map(kw => kw.term)]
+    };
+
+    try {
+      const saved = localStorage.getItem('youtube-profiles');
+      const profiles = saved ? JSON.parse(saved) : [];
+      const updatedProfiles = [...profiles, newProfile];
+      localStorage.setItem('youtube-profiles', JSON.stringify(updatedProfiles));
+      window.dispatchEvent(new CustomEvent('profiles-updated'));
+      alert(`Profile "${profileName}" saved successfully! You can now access it in the Profile Manager.`);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      alert('Error saving profile. See console for details.');
+    }
   };
 
   return (

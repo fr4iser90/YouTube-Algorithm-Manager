@@ -75,8 +75,7 @@ export function setupMessageHandlers() {
 
       case 'SAVE_PROFILE':
         const profileContent = JSON.stringify(message.profile, null, 2);
-        const blob = new Blob([profileContent], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        const url = 'data:application/json;charset=utf-8,' + encodeURIComponent(profileContent);
 
         chrome.downloads.download({
           url: url,
@@ -108,8 +107,7 @@ export function setupMessageHandlers() {
         
       case 'SAVE_BUBBLE_PROFILE':
         const profileContentBubble = JSON.stringify(message.profile, null, 2);
-        const blobBubble = new Blob([profileContentBubble], { type: 'application/json' });
-        const urlBubble = URL.createObjectURL(blobBubble);
+        const urlBubble = 'data:application/json;charset=utf-8,' + encodeURIComponent(profileContentBubble);
 
         chrome.downloads.download({
           url: urlBubble,

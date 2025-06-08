@@ -13,25 +13,53 @@ export function dateReviver(key: string, value: any) {
 }
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item, dateReviver) : initialValue;
-    } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
-      return initialValue;
-    }
-  });
+  const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Load initial value from chrome.storage.local
+    chrome.storage.local.get(key, (result) => {
+      if (chrome.runtime.lastError) {
+        console.error(`Error reading chrome.storage key "${key}":`, chrome.runtime.lastError);
+        setIsLoading(false);
+        return;
+      }
+      if (result[key]) {
+        const parsed = JSON.parse(result[key], dateReviver);
+        setStoredValue(parsed);
+      }
+      setIsLoading(false);
+    });
+
+    // Listen for changes from other parts of the extension
+    const handleChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+      if (areaName === 'local' && changes[key]) {
+        const parsed = JSON.parse(changes[key].newValue, dateReviver);
+        setStoredValue(parsed);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleChange);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleChange);
+    };
+  }, [key]);
 
   const setValue = (value: T | ((val: T) => T)) => {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      const stringifiedValue = JSON.stringify(valueToStore);
+      chrome.storage.local.set({ [key]: stringifiedValue }, () => {
+        if (chrome.runtime.lastError) {
+          console.error(`Error setting chrome.storage key "${key}":`, chrome.runtime.lastError);
+        }
+      });
     } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
+      console.error(`Error setting chrome.storage key "${key}":`, error);
     }
   };
 
-  return [storedValue, setValue] as const;
+  return [storedValue, setValue, isLoading] as const;
 }

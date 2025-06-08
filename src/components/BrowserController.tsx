@@ -14,6 +14,7 @@ interface BrowserSettings {
   cookiePersistence: 'none' | 'session' | 'persistent';
   bubbleLoadStrategy: 'fresh' | 'restore' | 'quick';
   profileManagement: 'isolated' | 'shared' | 'profile-based';
+  autoBackup: boolean;
 }
 
 interface BrowserControllerProps {
@@ -36,7 +37,8 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
     viewport: { width: 1920, height: 1080 },
     cookiePersistence: 'persistent', // New: Keep cookies for bubble loading
     bubbleLoadStrategy: 'quick', // New: Quick bubble loading
-    profileManagement: 'profile-based' // New: Profile-based session management
+    profileManagement: 'profile-based', // New: Profile-based session management
+    autoBackup: false,
   });
 
   const [bubbleLoadTime, setBubbleLoadTime] = useState<number>(0);
@@ -184,6 +186,17 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
                 type="checkbox"
                 checked={settings.blockAds}
                 onChange={(e) => updateSetting('blockAds', e.target.checked)}
+                disabled={isTraining}
+                className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-gray-300">Auto-backup Profiles</label>
+              <input
+                type="checkbox"
+                checked={settings.autoBackup}
+                onChange={(e) => updateSetting('autoBackup', e.target.checked)}
                 disabled={isTraining}
                 className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />

@@ -12,6 +12,8 @@ interface HeaderProps {
   currentAlgorithmState?: AlgorithmState;
   onLoadProfile?: (profile: any) => void;
   onCreateProfile?: () => void;
+  savedProfiles: any[];
+  setSavedProfiles: (profiles: any[]) => void;
 }
 
 interface SecurityCheck {
@@ -30,7 +32,9 @@ export const Header: React.FC<HeaderProps> = ({
   currentPreset,
   currentAlgorithmState,
   onLoadProfile,
-  onCreateProfile
+  onCreateProfile,
+  savedProfiles,
+  setSavedProfiles
 }) => {
   const [showProfileLoader, setShowProfileLoader] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(false);
@@ -394,6 +398,8 @@ export const Header: React.FC<HeaderProps> = ({
         }}
         currentPreset={currentPreset}
         currentAlgorithmState={currentAlgorithmState}
+        savedProfiles={savedProfiles}
+        setSavedProfiles={setSavedProfiles}
       />
 
       {/* Security Warning Modal */}

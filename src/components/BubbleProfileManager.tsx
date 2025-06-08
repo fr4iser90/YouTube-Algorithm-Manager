@@ -1,26 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Save, Play, Trash2, Download, Upload, Clock, Target, Globe, Users, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BubblePreset, AlgorithmState } from '../types';
-
-interface SavedProfile {
-  id: string;
-  name: string;
-  description: string;
-  preset: BubblePreset;
-  algorithmState: AlgorithmState;
-  cookies: string; // Base64 encoded cookie data
-  localStorage: string; // Base64 encoded localStorage data
-  sessionStorage: string; // Base64 encoded sessionStorage data
-  createdAt: Date;
-  lastUsed: Date;
-  bubbleStrength: number;
-  totalVideosWatched: number;
-  totalSearches: number;
-  trainingHours: number;
-  isActive: boolean;
-  tags: string[];
-}
+import { BubblePreset, AlgorithmState, SavedProfile } from '../types';
 
 interface ProfileLoaderProps {
   onLoadProfile: (profile: SavedProfile) => void;
@@ -29,6 +10,8 @@ interface ProfileLoaderProps {
   currentAlgorithmState?: AlgorithmState;
   isVisible: boolean;
   onClose: () => void;
+  savedProfiles: SavedProfile[];
+  setSavedProfiles: (profiles: SavedProfile[]) => void;
 }
 
 export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
@@ -37,9 +20,10 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
   currentPreset,
   currentAlgorithmState,
   isVisible,
-  onClose
+  onClose,
+  savedProfiles,
+  setSavedProfiles
 }) => {
-  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'lastUsed' | 'bubbleStrength' | 'name' | 'createdAt'>('lastUsed');
@@ -49,38 +33,15 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
   const [newProfileDescription, setNewProfileDescription] = useState('');
   const [newProfileTags, setNewProfileTags] = useState<string[]>([]);
 
-  // Load saved profiles from localStorage
-  useEffect(() => {
-    loadSavedProfiles();
-  }, []);
-
-  const loadSavedProfiles = () => {
-    try {
-      const saved = localStorage.getItem('youtube-profiles');
-      if (saved) {
-        const profiles = JSON.parse(saved, (key, value) => {
-          if (key.endsWith('At')) {
-            return new Date(value);
-          }
-          return value;
-        });
-        setSavedProfiles(profiles);
-      }
-    } catch (error) {
-      console.error('Failed to load saved profiles:', error);
-    }
-  };
-
   const saveProfiles = (profiles: SavedProfile[]) => {
     try {
-      localStorage.setItem('youtube-profiles', JSON.stringify(profiles));
       setSavedProfiles(profiles);
     } catch (error) {
       console.error('Failed to save profiles:', error);
     }
   };
 
-  const savecurrentProfile = () => {
+  const saveCurrentProfile = () => {
     if (!currentPreset || !newProfileName.trim()) return;
 
     const newProfile: SavedProfile = {
@@ -99,44 +60,36 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
         blockedChannels: [],
         prioritizedChannels: []
       },
-      cookies: btoa(JSON.stringify(document.cookie)), // Save current cookies
-      localStorage: btoa(JSON.stringify(localStorage)),
-      sessionStorage: btoa(JSON.stringify(sessionStorage)),
+      cookies: btoa(encodeURIComponent(JSON.stringify(document.cookie))),
+      localStorage: btoa(encodeURIComponent(JSON.stringify(localStorage))),
+      sessionStorage: btoa(encodeURIComponent(JSON.stringify(sessionStorage))),
       createdAt: new Date(),
       lastUsed: new Date(),
       bubbleStrength: currentAlgorithmState?.bubbleScore || 0,
-      totalVideosWatched: Math.floor(Math.random() * 100) + 50, // Mock data
+      totalVideosWatched: Math.floor(Math.random() * 100) + 50,
       totalSearches: Math.floor(Math.random() * 50) + 20,
       trainingHours: Math.floor(Math.random() * 10) + 2,
       isActive: false,
       tags: newProfileTags
     };
 
-    chrome.runtime.sendMessage({ type: 'SAVE_BUBBLE_PROFILE', profile: newProfile }, (response) => {
-      if (response.success) {
-        alert('Profile saved successfully!');
-        const updatedProfiles = [...savedProfiles, newProfile];
-        saveProfiles(updatedProfiles);
-        setShowSaveDialog(false);
-        setNewProfileName('');
-        setNewProfileDescription('');
-        setNewProfileTags([]);
-      } else {
-        alert(`Error saving profile: ${response.error}`);
-      }
-    });
+    const updatedProfiles = [...savedProfiles, newProfile];
+    saveProfiles(updatedProfiles);
+    setShowSaveDialog(false);
+    setNewProfileName('');
+    setNewProfileDescription('');
+    setNewProfileTags([]);
+    window.dispatchEvent(new CustomEvent('profiles-updated'));
   };
 
   const loadProfile = (profile: SavedProfile) => {
     try {
-      // Mark profile as active and update last used
       const updatedProfiles = savedProfiles.map(s => ({
         ...s,
         isActive: s.id === profile.id,
         lastUsed: s.id === profile.id ? new Date() : s.lastUsed
       }));
       saveProfiles(updatedProfiles);
-
       onLoadProfile(profile);
       onClose();
     } catch (error) {
@@ -195,7 +148,7 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
         reader.onload = (e) => {
           try {
             const importedProfiles = JSON.parse(e.target?.result as string, (key, value) => {
-              if (key.endsWith('At')) {
+              if (key.endsWith('At') || key === 'createdAt' || key === 'lastUsed') {
                 return new Date(value);
               }
               return value;
@@ -224,13 +177,13 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
     .sort((a, b) => {
       switch (sortBy) {
         case 'lastUsed':
-          return b.lastUsed.getTime() - a.lastUsed.getTime();
+          return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
         case 'bubbleStrength':
           return b.bubbleStrength - a.bubbleStrength;
         case 'name':
           return a.name.localeCompare(b.name);
         case 'createdAt':
-          return b.createdAt.getTime() - a.createdAt.getTime();
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         default:
           return 0;
       }
@@ -238,9 +191,10 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
 
   const allTags = Array.from(new Set(savedProfiles.flatMap(s => s.tags)));
 
-  const formatTimeAgo = (date: Date) => {
+  const formatTimeAgo = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const diffMs = now.getTime() - dateObj.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
     
@@ -453,7 +407,7 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
 
                   {profile.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {profile.tags.slice(0, 3).map(tag => (
+                      {profile.tags.slice(0, 3).map((tag: string) => (
                         <span
                           key={tag}
                           className="px-2 py-1 bg-gray-600 text-gray-300 text-xs rounded"
@@ -561,7 +515,7 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
                   Cancel
                 </button>
                 <button
-                  onClick={savecurrentProfile}
+                  onClick={saveCurrentProfile}
                   disabled={!newProfileName.trim()}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors"
                 >

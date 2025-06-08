@@ -81,18 +81,71 @@ export class TrainingManager {
 
   async browseWithProfile(profile) {
     console.log('🚀 Browsing with profile:', profile.name);
-    const newWindow = await chrome.windows.create({ incognito: true });
-    const newTab = newWindow.tabs[0];
 
-    await chrome.scripting.executeScript({
-      target: { tabId: newTab.id },
-      files: ['content/warmup-script.js'],
-    });
+    try {
+      // 1. Create a new incognito window but don't load any URL yet
+      const newWindow = await chrome.windows.create({ incognito: true, url: 'about:blank' });
+      const newTab = newWindow.tabs[0];
 
-    await chrome.tabs.sendMessage(newTab.id, {
-      type: 'WARM_UP_BROWSER',
-      keywords: profile.preset.targetKeywords,
-    });
+      // Helper function to decode data
+      const decode = (str) => {
+        try {
+          return decodeURIComponent(atob(str));
+        } catch (e) {
+          console.error('Failed to decode string:', e);
+          return null;
+        }
+      };
+
+      // 2. Restore localStorage and sessionStorage
+      const localStorageData = JSON.parse(decode(profile.localStorage) || '{}');
+      const sessionStorageData = JSON.parse(decode(profile.sessionStorage) || '{}');
+
+      await chrome.scripting.executeScript({
+        target: { tabId: newTab.id },
+        func: (lsData, ssData) => {
+          Object.keys(lsData).forEach(key => {
+            localStorage.setItem(key, lsData[key]);
+          });
+          Object.keys(ssData).forEach(key => {
+            sessionStorage.setItem(key, ssData[key]);
+          });
+        },
+        args: [localStorageData, sessionStorageData],
+        world: 'MAIN'
+      });
+
+      // 3. Restore Cookies
+      const cookieStr = JSON.parse(decode(profile.cookies) || '""');
+      const cookies = cookieStr.split(';').map(c => c.trim());
+
+      for (const cookie of cookies) {
+        if (!cookie) continue;
+        const [name, ...valueParts] = cookie.split('=');
+        const value = valueParts.join('=');
+        
+        if (name && value) {
+          await chrome.cookies.set({
+            url: 'https://www.youtube.com',
+            name: name,
+            value: value,
+            domain: '.youtube.com',
+            path: '/',
+            secure: true,
+            httpOnly: false, // Cannot set httpOnly from an extension
+            sameSite: 'no_restriction'
+          });
+        }
+      }
+      
+      console.log(`✅ Restored ${cookies.length} cookies.`);
+
+      // 4. Now, navigate to YouTube
+      await chrome.tabs.update(newTab.id, { url: 'https://www.youtube.com' });
+
+    } catch (error) {
+      console.error('❌ Failed to browse with profile:', error);
+    }
   }
 
   async startPreTrainingAnalysis(sendResponse) {
