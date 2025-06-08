@@ -10,7 +10,8 @@
   }
 
   const titles = [];
-  document.querySelectorAll('ytd-video-renderer #video-title').forEach(el => {
+  // Find all title elements, which is a more robust approach.
+  document.querySelectorAll('#video-title').forEach(el => {
     if (el.textContent) {
       titles.push(el.textContent.trim());
     }

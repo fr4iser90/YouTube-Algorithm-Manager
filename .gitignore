@@ -7,10 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Build outputs
 dist
 dist-ssr
+build
 *.local
+.cache
+.next
+out
+.nuxt
+.output
+.turbo
 
 # Editor directories and files
 .vscode/*
@@ -22,4 +34,33 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
 .env
+.env.*
+!.env.example
+
+# Cache and temporary files
+.temp
+.tmp
+*.tmp
+*.temp
+.cache
+.parcel-cache
+.eslintcache
+.stylelintcache
+.prettiercache
+.rollup.cache
+tsconfig.tsbuildinfo
+
+# Coverage and test
+coverage
+.nyc_output
+.jest
+__snapshots__
+
+# System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

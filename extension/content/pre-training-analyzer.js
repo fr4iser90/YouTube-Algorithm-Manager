@@ -74,8 +74,11 @@ class PreTrainingAnalyzer {
     console.log('🔬 Starting pre-training analysis of recommendations...');
     const recommendedVideos = this.scrapeRecommended();
 
-    const allVideoTitles = [...historyVideos, ...recommendedVideos];
-    const documents = allVideoTitles.map(title => this.tokenize(title));
+    const allVideoData = [
+      ...historyVideos,
+      ...recommendedVideos.map(v => `${v.title} ${v.channel} ${v.description}`)
+    ];
+    const documents = allVideoData.map(text => this.tokenize(text));
     const idf = this.calculateIdf(documents);
 
     const allTokens = [].concat(...documents);
@@ -100,13 +103,41 @@ class PreTrainingAnalyzer {
   }
 
   scrapeRecommended() {
-    const titles = [];
-    document.querySelectorAll('ytd-rich-item-renderer #video-title').forEach(el => {
-      if (el.textContent) {
-        titles.push(el.textContent.trim());
+    const videos = [];
+    // Find all title elements first, as they are the most reliable anchor.
+    document.querySelectorAll('#video-title').forEach(titleElement => {
+      // Find the closest ancestor that is a known video container.
+      const container = titleElement.closest(
+        'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer'
+      );
+
+      if (container && titleElement.textContent && titleElement.textContent.trim()) {
+        const channelElement = container.querySelector('ytd-channel-name, #channel-name'); // Look for both new and old selectors
+        const descriptionElement = container.querySelector('#description-text');
+
+        const videoData = {
+          title: titleElement.textContent.trim(),
+          channel: channelElement ? channelElement.textContent.trim() : '',
+          description: descriptionElement ? descriptionElement.textContent.trim() : '',
+        };
+
+        // Ensure we don't add duplicates
+        if (!videos.some(v => v.title === videoData.title)) {
+          videos.push(videoData);
+        }
+      } else if (titleElement.textContent && titleElement.textContent.trim()) {
+        // Fallback if a known container isn't found, just grab the title.
+        const videoData = {
+          title: titleElement.textContent.trim(),
+          channel: '',
+          description: '',
+        };
+        if (!videos.some(v => v.title === videoData.title)) {
+          videos.push(videoData);
+        }
       }
     });
-    return titles;
+    return videos;
   }
 }
 

@@ -189,22 +189,34 @@ class TrainingManager {
 
   async handleHistoryAnalysisComplete(results) {
     try {
-      const homepageUrl = 'https://www.youtube.com/';
-      const [homepageTab] = await chrome.tabs.query({ url: homepageUrl });
-      if (homepageTab) {
-        await chrome.tabs.update(homepageTab.id, { active: true });
-        await this.waitForTabLoad(homepageTab.id);
-        chrome.tabs.sendMessage(homepageTab.id, {
+      const historyUrl = 'https://www.youtube.com/feed/history';
+      const [historyTab] = await chrome.tabs.query({ url: historyUrl });
+      if (historyTab) {
+        await chrome.tabs.update(historyTab.id, { url: 'https://www.youtube.com/' });
+        await this.waitForTabLoad(historyTab.id);
+        chrome.tabs.sendMessage(historyTab.id, {
           type: 'ANALYZE_RECOMMENDATIONS',
           historyVideos: results.historyVideos
         });
       } else {
-        const newTab = await chrome.tabs.create({ url: homepageUrl });
-        await this.waitForTabLoad(newTab.id);
-        chrome.tabs.sendMessage(newTab.id, {
-          type: 'ANALYZE_RECOMMENDATIONS',
-          historyVideos: results.historyVideos
-        });
+        // Fallback to old behavior if history tab is not found
+        const homepageUrl = 'https://www.youtube.com/';
+        const [homepageTab] = await chrome.tabs.query({ url: homepageUrl });
+        if (homepageTab) {
+          await chrome.tabs.update(homepageTab.id, { active: true });
+          await this.waitForTabLoad(homepageTab.id);
+          chrome.tabs.sendMessage(homepageTab.id, {
+            type: 'ANALYZE_RECOMMENDATIONS',
+            historyVideos: results.historyVideos
+          });
+        } else {
+          const newTab = await chrome.tabs.create({ url: homepageUrl });
+          await this.waitForTabLoad(newTab.id);
+          chrome.tabs.sendMessage(newTab.id, {
+            type: 'ANALYZE_RECOMMENDATIONS',
+            historyVideos: results.historyVideos
+          });
+        }
       }
     } catch (error) {
       console.error('Error handling history analysis complete:', error);
