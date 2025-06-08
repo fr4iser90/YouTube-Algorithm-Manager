@@ -3,14 +3,35 @@
 (async function() {
   console.log('📜 History analyzer script started.');
 
-  // Scroll down to load more videos
-  for (let i = 0; i < 5; i++) {
-    window.scrollTo(0, document.body.scrollHeight);
+  console.log('📜 Starting definitive smart scroll for history...');
+  let lastVideoCount = 0;
+  let consecutiveStops = 0;
+  const maxConsecutiveStops = 3; // Stop after 3 scrolls with no new videos
+
+  for (let i = 0; i < 30; i++) { // Generous limit
+    lastVideoCount = document.querySelectorAll('#video-title').length;
+    
+    // Scroll the main document element
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    
     await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const newVideoCount = document.querySelectorAll('#video-title').length;
+
+    if (newVideoCount > lastVideoCount) {
+      console.log(`📜 Found more history videos. Count: ${newVideoCount}`);
+      consecutiveStops = 0;
+    } else {
+      consecutiveStops++;
+      console.log(`📜 History video count unchanged. Stop attempt ${consecutiveStops} of ${maxConsecutiveStops}.`);
+      if (consecutiveStops >= maxConsecutiveStops) {
+        console.log('📜 End of history page reached. Stopping scroll.');
+        break;
+      }
+    }
   }
 
   const titles = [];
-  // Find all title elements, which is a more robust approach.
   document.querySelectorAll('#video-title').forEach(el => {
     if (el.textContent) {
       titles.push(el.textContent.trim());

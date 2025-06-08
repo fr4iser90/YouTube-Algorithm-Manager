@@ -70,14 +70,40 @@ class PreTrainingAnalyzer {
     return tfidf;
   }
 
+  async smartScroll() {
+    console.log('📜 Starting definitive smart scroll...');
+    let lastVideoCount = 0;
+    let consecutiveStops = 0;
+    const maxConsecutiveStops = 3; // Stop after 3 scrolls with no new videos
+
+    for (let i = 0; i < 30; i++) { // Generous limit
+      lastVideoCount = document.querySelectorAll('#video-title').length;
+      
+      // Scroll the main document element, which is correct for YouTube
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const newVideoCount = document.querySelectorAll('#video-title').length;
+
+      if (newVideoCount > lastVideoCount) {
+        console.log(`📜 Found more videos. Count: ${newVideoCount}`);
+        consecutiveStops = 0;
+      } else {
+        consecutiveStops++;
+        console.log(`📜 Video count unchanged. Stop attempt ${consecutiveStops} of ${maxConsecutiveStops}.`);
+        if (consecutiveStops >= maxConsecutiveStops) {
+          console.log('📜 End of page reached. Stopping scroll.');
+          break;
+        }
+      }
+    }
+  }
+
   async analyze(historyVideos = []) {
     console.log('🔬 Starting pre-training analysis of recommendations...');
 
-    // Scroll down to ensure recommendations are loaded, similar to history analyzer
-    for (let i = 0; i < 3; i++) {
-      window.scrollTo(0, document.body.scrollHeight);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
+    await this.smartScroll();
 
     const recommendedVideos = this.scrapeRecommended();
 
@@ -111,34 +137,22 @@ class PreTrainingAnalyzer {
 
   scrapeRecommended() {
     const videos = [];
-    // Find all title elements first, as they are the most reliable anchor.
     document.querySelectorAll('#video-title').forEach(titleElement => {
-      // Find the closest ancestor that is a known video container.
       const container = titleElement.closest(
         'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer'
       );
 
       if (container && titleElement.textContent && titleElement.textContent.trim()) {
-        const channelElement = container.querySelector('ytd-channel-name, #channel-name'); // Look for both new and old selectors
-        const descriptionElement = container.querySelector('#description-text');
+        // More robust channel and description selectors
+        const channelElement = container.querySelector('ytd-channel-name a, #channel-name a, .ytd-channel-name');
+        const descriptionElement = container.querySelector('#description-text, .metadata-snippet-text');
 
         const videoData = {
           title: titleElement.textContent.trim(),
-          channel: channelElement ? channelElement.textContent.trim() : '',
+          channel: channelElement ? channelElement.textContent.trim() : 'Unknown Channel', // Add a fallback
           description: descriptionElement ? descriptionElement.textContent.trim() : '',
         };
 
-        // Ensure we don't add duplicates
-        if (!videos.some(v => v.title === videoData.title)) {
-          videos.push(videoData);
-        }
-      } else if (titleElement.textContent && titleElement.textContent.trim()) {
-        // Fallback if a known container isn't found, just grab the title.
-        const videoData = {
-          title: titleElement.textContent.trim(),
-          channel: '',
-          description: '',
-        };
         if (!videos.some(v => v.title === videoData.title)) {
           videos.push(videoData);
         }
