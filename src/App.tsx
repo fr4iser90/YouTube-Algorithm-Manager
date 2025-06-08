@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { PresetCard } from './components/PresetCard';
 import { PresetEditor } from './components/PresetEditor';
@@ -10,7 +10,7 @@ import { YouTubeAutomation } from './components/YouTubeAutomation';
 import { RealTimeAnalytics } from './components/RealTimeAnalytics';
 import { AnonymousMode } from './components/AnonymousMode';
 import { MLAnalytics } from './components/MLAnalytics';
-import { ExtensionBridge } from './components/ExtensionBridge';
+import { ExtensionBridge, ExtensionBridgeHandle } from './components/ExtensionBridge';
 import { useLocalStorage, dateReviver } from './hooks/useLocalStorage';
 /* Dynamically load presets from GitHub manifest */
 import { BubblePreset, TrainingProfile, AlgorithmState } from './types';
@@ -32,6 +32,7 @@ function App() {
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [activeProfileId, setactiveProfileId] = useState<string | null>(null);
   const [extensionTrainingActive, setExtensionTrainingActive] = useState(false);
+  const extensionBridgeRef = useRef<ExtensionBridgeHandle>(null);
 
   // Initialize with template presets from GitHub if none exist
   useEffect(() => {
@@ -111,32 +112,11 @@ function App() {
   };
 
   const handleTrainPreset = async (preset: BubblePreset) => {
-    if (currentProfile || extensionTrainingActive) return;
-
-    // Verbesserte Extension-Erkennung
-    const extensionAvailable = !!(
-      localStorage.getItem('yt-trainer-extension-status') ||
-      localStorage.getItem('yt-trainer-extension-info') ||
-      document.querySelector('#yt-trainer-extension-marker') ||
-      (window as any).ytTrainerExtension
-    );
-
-    if (!extensionAvailable) {
-      alert('❌ Browser Extension Required!\n\nPlease install the browser extension to enable real YouTube algorithm training.\n\nWithout the extension, no training is possible.');
-      return;
-    }
-
-    // Start extension training
-    try {
-      const success = await startExtensionTraining(preset);
+    if (extensionBridgeRef.current) {
+      const success = await extensionBridgeRef.current.startTraining(preset);
       if (success) {
         setExtensionTrainingActive(true);
-      } else {
-        alert('❌ Extension Training Failed!\n\nCould not start training. Please check if the extension is properly installed and try again.');
       }
-    } catch (error) {
-      console.error('Extension training failed:', error);
-      alert('❌ Extension Training Error!\n\nTraining failed to start. Please check the browser console for details.');
     }
   };
 
@@ -205,18 +185,10 @@ function App() {
     }
   };
 
-  const handleStopTraining = () => {
-    setcurrentProfile(null);
-    setExtensionTrainingActive(false);
-    
-    // Stop extension training
-    localStorage.removeItem('yt-trainer-command');
-    window.postMessage({ type: 'YT_TRAINER_STOP' }, '*');
-    
-    // Try global extension object
-    const globalExtension = (window as any).ytTrainerExtension;
-    if (globalExtension && globalExtension.stopTraining) {
-      globalExtension.stopTraining();
+  const handleStopTraining = async () => {
+    if (extensionBridgeRef.current) {
+      await extensionBridgeRef.current.stopTraining();
+      setExtensionTrainingActive(false);
     }
   };
 
@@ -376,6 +348,7 @@ function App() {
         {/* Extension Bridge Component */}
         <div className="mb-8">
           <ExtensionBridge
+            ref={extensionBridgeRef}
             onTrainingStart={handleExtensionTrainingStart}
             onTrainingComplete={handleExtensionTrainingComplete}
             onTrainingProgress={handleExtensionTrainingProgress}

@@ -156,13 +156,9 @@ class PopupManager {
 
   async openWebApp() {
     try {
-      // Use the deployed web app URL
-      //const webAppUrl = 'https://tiny-semolina-f9b419.netlify.app';
-      const webAppUrl = 'http://localhost:5173';
-
+      const webAppUrl = 'webapp/index.html';
       await chrome.tabs.create({ url: webAppUrl });
       window.close();
-      
     } catch (error) {
       console.error('Error opening web app:', error);
       this.showNotification('Could not open web app', 'error');

@@ -129,10 +129,7 @@ export const RealAutomationController: React.FC<RealAutomationControllerProps> =
         <div className="bg-gray-700/30 rounded-lg p-4">
           <h4 className="text-sm font-medium text-gray-300 mb-3">Browser Konfiguration</h4>
           <div className="space-y-2 text-xs text-gray-400">
-            <div className="flex justify-between">
-              <span>Modus:</span>
-              <span>{browserConfig.headless ? 'Unsichtbar' : 'Sichtbar'}</span>
-            </div>
+            {/* Headless-Modus entfernt */}
             <div className="flex justify-between">
               <span>Incognito:</span>
               <span>{browserConfig.useIncognito ? 'Ja' : 'Nein'}</span>

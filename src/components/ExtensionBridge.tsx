@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Chrome, Download, CheckCircle, AlertTriangle, Zap, Play, Square, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BubblePreset } from '../types';
@@ -26,11 +26,16 @@ interface ExtensionBridgeProps {
   onTrainingProgress?: (progress: TrainingProgress) => void;
 }
 
-export const ExtensionBridge: React.FC<ExtensionBridgeProps> = ({
+export interface ExtensionBridgeHandle {
+  startTraining: (preset: BubblePreset) => Promise<boolean>;
+  stopTraining: () => Promise<void>;
+}
+
+export const ExtensionBridge = forwardRef<ExtensionBridgeHandle, ExtensionBridgeProps>(({
   onTrainingStart,
   onTrainingComplete,
   onTrainingProgress
-}) => {
+}, ref) => {
   const [extensionStatus, setExtensionStatus] = useState<ExtensionStatus>({
     isInstalled: false,
     isConnected: false,
@@ -43,41 +48,69 @@ export const ExtensionBridge: React.FC<ExtensionBridgeProps> = ({
 
   useEffect(() => {
     checkExtensionStatus();
-    setupEventListeners();
     
+    // Listen for messages from the background script
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      console.log('📡 Received runtime message:', message);
+      switch (message.type) {
+        case 'TRAINING_PROGRESS':
+          setTrainingProgress(message.progress);
+          onTrainingProgress?.(message.progress);
+          break;
+        case 'TRAINING_COMPLETED':
+          onTrainingComplete?.(message.results);
+          setExtensionStatus(prev => ({ ...prev, isTraining: false }));
+          setTrainingProgress(null);
+          break;
+        case 'TRAINING_ERROR':
+          console.error('Extension training error:', message.error);
+          setExtensionStatus(prev => ({ ...prev, isTraining: false }));
+          setTrainingProgress(null);
+          break;
+        case 'TRAINING_STOPPED':
+          setExtensionStatus(prev => ({ ...prev, isTraining: false }));
+          setTrainingProgress(null);
+          break;
+        case 'STATUS_UPDATE':
+          setExtensionStatus(prev => ({
+            ...prev,
+            isInstalled: true,
+            isConnected: true,
+            isTraining: message.isTraining,
+            currentPreset: message.currentPreset,
+            version: message.version,
+            detectionMethod: 'runtime-message'
+          }));
+          break;
+      }
+    });
+
     // Check status every 3 seconds
     const interval = setInterval(checkExtensionStatus, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  const checkExtensionStatus = () => {
-    try {
-      // Prüfe alle möglichen Extension-Signale
-      const extensionStatus = !!(
-        localStorage.getItem('yt-trainer-extension-status') ||
-        localStorage.getItem('yt-trainer-extension-info') ||
-        document.querySelector('#yt-trainer-extension-marker') ||
-        (window as any).ytTrainerExtension
-      );
-
-      const isConnected = !!localStorage.getItem('yt-trainer-extension-status');
-      const statusData = localStorage.getItem('yt-trainer-extension-status');
-      const isTraining = statusData ? statusData.includes('"isTraining":true') : false;
-
-      setExtensionStatus({
-        isInstalled: extensionStatus,
-        isConnected,
-        isTraining
-      });
-
-      console.log('🔍 Extension Status:', {
-        isInstalled: extensionStatus,
-        isConnected,
-        isTraining
-      });
-
-    } catch (error) {
-      console.error('Error checking extension status:', error);
+  const checkExtensionStatus = async () => {
+    if (chrome.runtime && chrome.runtime.id) {
+      try {
+        const response = await chrome.runtime.sendMessage({ type: 'GET_TRAINING_STATUS' });
+        if (response) {
+          setExtensionStatus({
+            isInstalled: true,
+            isConnected: true,
+            isTraining: response.isTraining,
+            currentPreset: response.currentPreset,
+            detectionMethod: 'runtime-message'
+          });
+        } else {
+          setExtensionStatus(prev => ({ ...prev, isConnected: false }));
+        }
+      } catch (error) {
+        // This error is expected if the extension is not installed or has been reloaded
+        setExtensionStatus({ isInstalled: false, isConnected: false, isTraining: false });
+      }
+    } else {
+      setExtensionStatus({ isInstalled: false, isConnected: false, isTraining: false });
     }
   };
 
@@ -180,61 +213,32 @@ export const ExtensionBridge: React.FC<ExtensionBridgeProps> = ({
       setShowInstallGuide(true);
       return false;
     }
-
     try {
-      const command = {
-        type: 'START_TRAINING',
-        preset,
-        timestamp: Date.now(),
-        id: Date.now().toString()
-      };
-      
-      // Method 1: Save to localStorage (funktioniert cross-domain)
-      localStorage.setItem('yt-trainer-command', JSON.stringify(command));
-      
-      // Method 2: Send via BroadcastChannel
-      try {
-        const channel = new BroadcastChannel('yt-trainer-channel');
-        channel.postMessage(command);
-      } catch (error) {
-        console.log('BroadcastChannel not available');
-      }
-
+      await chrome.runtime.sendMessage({ type: 'START_TRAINING', preset });
       setExtensionStatus(prev => ({ ...prev, isTraining: true, currentPreset: preset.name }));
       onTrainingStart?.(preset);
-      
-      console.log('🚀 Training command sent to extension via multiple methods');
       return true;
-
     } catch (error) {
       console.error('Error starting training with extension:', error);
+      setShowInstallGuide(true);
       return false;
     }
   };
 
   const stopTrainingWithExtension = async () => {
     try {
-      // Clear command
-      localStorage.removeItem('yt-trainer-command');
-      
-      // Send stop via BroadcastChannel
-      try {
-        const channel = new BroadcastChannel('yt-trainer-channel');
-        channel.postMessage({
-          type: 'STOP_TRAINING',
-          timestamp: Date.now()
-        });
-      } catch (error) {
-        console.log('BroadcastChannel not available');
-      }
-
+      await chrome.runtime.sendMessage({ type: 'STOP_TRAINING' });
       setExtensionStatus(prev => ({ ...prev, isTraining: false, currentPreset: undefined }));
       setTrainingProgress(null);
-
     } catch (error) {
       console.error('Error stopping training:', error);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    startTraining: startTrainingWithExtension,
+    stopTraining: stopTrainingWithExtension,
+  }));
 
   const openExtensionDownload = () => {
     // In production, this would link to Chrome Web Store
@@ -517,58 +521,4 @@ export const ExtensionBridge: React.FC<ExtensionBridgeProps> = ({
       </AnimatePresence>
     </>
   );
-};
-
-// Export utility functions for other components
-export const useExtensionBridge = () => {
-  const [extensionStatus, setExtensionStatus] = useState({
-    isInstalled: false,
-    isConnected: false,
-    isTraining: false
-  });
-
-  const startTraining = async (preset: BubblePreset): Promise<boolean> => {
-    try {
-      localStorage.setItem('yt-trainer-command', JSON.stringify({
-        type: 'START_TRAINING',
-        preset,
-        timestamp: Date.now()
-      }));
-
-      // Send via BroadcastChannel
-      try {
-        const channel = new BroadcastChannel('yt-trainer-channel');
-        channel.postMessage({
-          type: 'START_TRAINING',
-          preset
-        });
-      } catch (error) {
-        console.log('BroadcastChannel not available');
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error starting extension training:', error);
-      return false;
-    }
-  };
-
-  const stopTraining = async (): Promise<void> => {
-    localStorage.removeItem('yt-trainer-command');
-    
-    try {
-      const channel = new BroadcastChannel('yt-trainer-channel');
-      channel.postMessage({
-        type: 'STOP_TRAINING'
-      });
-    } catch (error) {
-      console.log('BroadcastChannel not available');
-    }
-  };
-
-  return {
-    extensionStatus,
-    startTraining,
-    stopTraining
-  };
-};
+});

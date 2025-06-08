@@ -6,7 +6,7 @@ interface BrowserSettings {
   useIncognito: boolean;
   muteAudio: boolean;
   speed: number; // 1-5x speed
-  headless: boolean; // Invisible browser
+  // headless: boolean; // Invisible browser
   clearCookies: boolean;
   blockAds: boolean;
   userAgent: string;
@@ -29,7 +29,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
     useIncognito: false, // Changed default - not needed for non-logged users
     muteAudio: true,
     speed: 2,
-    headless: false,
+    // headless: false,
     clearCookies: false, // Changed default - keep cookies for bubble persistence
     blockAds: true,
     userAgent: 'default',
@@ -189,19 +189,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="text-sm text-gray-300 flex items-center space-x-1">
-                {settings.headless ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                <span>Invisible (Headless)</span>
-              </label>
-              <input
-                type="checkbox"
-                checked={settings.headless}
-                onChange={(e) => updateSetting('headless', e.target.checked)}
-                disabled={isTraining}
-                className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-              />
-            </div>
+            {/* Headless-Option entfernt */}
           </div>
         </div>
 
@@ -277,7 +265,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
           <div className="flex items-center space-x-3">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
             <span className="text-blue-300 text-sm">
-              Extension training active in {settings.headless ? 'invisible' : 'visible'} mode
+              Extension training active
               {settings.cookiePersistence === 'persistent' && ' with cookie persistence'}
             </span>
           </div>

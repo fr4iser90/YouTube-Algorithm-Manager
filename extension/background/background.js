@@ -71,7 +71,7 @@ class TrainingManager {
     });
   }
 
-  async startTraining(preset, tab) {
+  async startTraining(preset) {
     if (this.isTraining) {
       console.log('⚠️ Training already in progress');
       return;
@@ -79,24 +79,30 @@ class TrainingManager {
 
     this.isTraining = true;
     this.currentPreset = preset;
-    this.trainingTab = tab;
 
     console.log('🚀 Starting training with preset:', preset.name);
 
     try {
-      // Ensure we're on YouTube
-      if (!tab.url?.includes('youtube.com')) {
-        await chrome.tabs.update(tab.id, { url: 'https://www.youtube.com' });
-        await this.waitForTabLoad(tab.id);
+      // Finde einen aktiven YouTube-Tab oder erstelle einen neuen
+      let [youtubeTab] = await chrome.tabs.query({ url: "*://*.youtube.com/*", active: true });
+      if (!youtubeTab) {
+        [youtubeTab] = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
       }
+      if (!youtubeTab) {
+        youtubeTab = await chrome.tabs.create({ url: "https://www.youtube.com" });
+      }
+      this.trainingTab = youtubeTab;
 
-      // Send training command to content script
-      await chrome.tabs.sendMessage(tab.id, {
+      // Warte, bis der Tab geladen ist
+      await this.waitForTabLoad(youtubeTab.id);
+
+      // Sende den Trainingsbefehl an das Content Script
+      await chrome.tabs.sendMessage(youtubeTab.id, {
         type: 'START_TRAINING',
         preset: preset
       });
 
-      // Store training state
+      // Speichere den Trainingsstatus
       await chrome.storage.local.set({
         isTraining: true,
         currentPreset: preset,
@@ -232,8 +238,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     
     // Open welcome page or instructions
     chrome.tabs.create({
-      //url: 'https://tiny-semolina-f9b419.netlify.app';
-      url: 'http://localhost:5173'
+      url: chrome.runtime.getURL('webapp/index.html')
     });
   }
 });
