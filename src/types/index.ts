@@ -76,7 +76,7 @@ export interface CategoryDistribution {
   language?: string;
 }
 
-export interface TrainingSession {
+export interface TrainingProfile {
   id: string;
   presetId: string;
   startTime: Date;

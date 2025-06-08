@@ -11,12 +11,12 @@ The YouTube Algorithm Manager is a web application that allows users to create c
 
 ## Challenges we ran into
 - Ensuring seamless communication between the web app and the browser extension.
-- Managing state persistence across sessions and ensuring data integrity.
+- Managing state persistence across profiles and ensuring data integrity.
 - Handling cross-domain restrictions and ensuring the extension works reliably on YouTube.
 
 ## Accomplishments that we're proud of
 - Successfully creating a tool that allows users to influence their YouTube recommendations.
-- Implementing a user-friendly interface for managing presets and sessions.
+- Implementing a user-friendly interface for managing presets and profiles.
 - Developing a robust communication system between the web app and the extension.
 
 ## What we learned

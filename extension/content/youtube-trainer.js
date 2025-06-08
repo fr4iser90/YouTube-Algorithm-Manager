@@ -53,7 +53,7 @@ class YouTubeAlgorithmTrainer {
       // Schreibe in localStorage (funktioniert cross-domain)
       localStorage.setItem('yt-trainer-extension-status', JSON.stringify(extensionData));
       
-      // Auch in sessionStorage für Backup
+      // Auch in profileStorage für Backup
       sessionStorage.setItem('yt-trainer-extension-status', JSON.stringify(extensionData));
       
       console.log('✅ Cross-domain bridge setup complete:', extensionData);

@@ -1,7 +1,7 @@
 # YouTube Algorithm Manager
 
 ## 📋 Overview
-This project is a web application designed to train and manage YouTube's recommendation algorithm using a browser extension. It allows users to create custom presets, save sessions, and interact with YouTube in real-time to influence their recommendations.
+This project is a web application designed to train and manage YouTube's recommendation algorithm using a browser extension. It allows users to create custom presets, save profiles, and interact with YouTube in real-time to influence their recommendations.
 
 ## 🏗️ Architecture
 The application is built using a modern React-based architecture with the following key components:
@@ -23,7 +23,7 @@ The application is built using a modern React-based architecture with the follow
   - Content Scripts
   - Background Scripts
 - **Storage**:
-  - localStorage (for session and preset data)
+  - localStorage (for profile and preset data)
   - sessionStorage (for temporary data)
 - **Communication**:
   - BroadcastChannel
@@ -43,7 +43,7 @@ The application is built using a modern React-based architecture with the follow
 
 ## 🔄 Key Features
 - **Preset Management**: Create, edit, and manage custom presets for YouTube algorithm training.
-- **Session Management**: Save and load sessions to quickly switch between different training configurations.
+- **Profile Management**: Save and load profiles to quickly switch between different training configurations.
 - **Real-time Training**: Use the browser extension to interact with YouTube and train the algorithm in real-time.
 - **Cross-domain Communication**: Seamless communication between the web app and the extension.
 
@@ -71,7 +71,7 @@ The application is built using a modern React-based architecture with the follow
 - **Techstack**: React, TypeScript, Vite, Framer Motion, Lucide React, Chrome Extension API.
 - **Key Components**:
   - **`ExtensionBridge`**: Manages communication between the web app and the extension.
-  - **`SessionLoader`**: Handles saving, loading, and managing sessions.
+  - **`BubbleProfileManager`**: Handles saving, loading, and managing profiles.
   - **`PresetCard`**: Displays and manages custom presets.
   - **`BrowserController`**: Controls browser settings for the extension.
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Brain, Download, Upload, Settings, Save, Shield, Eye, EyeOff, AlertTriangle, CheckCircle, X, Chrome } from 'lucide-react';
-import { SessionLoader } from './SessionLoader';
+import { ProfileLoader } from './BubbleProfileManager';
 import { BubblePreset, AlgorithmState } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,8 +10,8 @@ interface HeaderProps {
   onSettings: () => void;
   currentPreset?: BubblePreset;
   currentAlgorithmState?: AlgorithmState;
-  onLoadSession?: (session: any) => void;
-  onCreateSession?: () => void;
+  onLoadProfile?: (profile: any) => void;
+  onCreateProfile?: () => void;
 }
 
 interface SecurityCheck {
@@ -29,10 +29,10 @@ export const Header: React.FC<HeaderProps> = ({
   onSettings,
   currentPreset,
   currentAlgorithmState,
-  onLoadSession,
-  onCreateSession
+  onLoadProfile,
+  onCreateProfile
 }) => {
-  const [showSessionLoader, setShowSessionLoader] = useState(false);
+  const [showProfileLoader, setShowProfileLoader] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(false);
 
   // Security Check - Extension focused
@@ -97,64 +97,64 @@ export const Header: React.FC<HeaderProps> = ({
 
   const proceedWithAnonymousBrowsing = () => {
     try {
-      // Load saved session cookies
-      const savedSessions = localStorage.getItem('youtube-bubble-sessions');
-      let sessionCookies = '';
+      // Load saved profile cookies
+      const savedProfiles = localStorage.getItem('youtube-profiles');
+      let profileCookies = '';
       
-      if (savedSessions) {
-        const sessions = JSON.parse(savedSessions);
-        const activeSession = sessions.find((s: any) => s.isActive);
+      if (savedProfiles) {
+        const profiles = JSON.parse(savedProfiles);
+        const activeProfile = profiles.find((p: any) => p.isActive);
         
-        if (activeSession && activeSession.cookies) {
-          sessionCookies = atob(activeSession.cookies);
-          console.log('🍪 Loading session cookies for anonymous browsing');
+        if (activeProfile && activeProfile.cookies) {
+          profileCookies = atob(activeProfile.cookies);
+          console.log('🍪 Loading profile cookies for anonymous browsing');
         }
       }
 
-      // Create YouTube URL with session parameters
+      // Create YouTube URL with profile parameters
       const youtubeUrl = new URL('https://www.youtube.com');
       
-      if (sessionCookies) {
-        youtubeUrl.searchParams.set('session_restore', 'true');
+      if (profileCookies) {
+        youtubeUrl.searchParams.set('profile_restore', 'true');
         youtubeUrl.searchParams.set('bubble_mode', 'anonymous');
       }
 
-      // Open YouTube with session data
+      // Open YouTube with profile data
       const newWindow = window.open(youtubeUrl.toString(), '_blank');
       
       if (newWindow) {
         setTimeout(() => {
           try {
-            console.log('🎯 Session cookies injected into anonymous window');
-            console.log('✅ Anonymous browsing with loaded bubble session active!');
+            console.log('🎯 Profile cookies injected into anonymous window');
+            console.log('✅ Anonymous browsing with loaded bubble profile active!');
           } catch (error) {
             console.log('⚠️ Cookie injection failed, but window opened');
           }
         }, 1000);
       }
 
-      console.log('🕵️ Opening YouTube ANONYMOUSLY with LOADED SESSION...');
+      console.log('🕵️ Opening YouTube ANONYMOUSLY with LOADED PROFILE...');
       
     } catch (error) {
-      console.error('❌ Failed to load session for anonymous browsing:', error);
+      console.error('❌ Failed to load profile for anonymous browsing:', error);
       window.open('https://www.youtube.com', '_blank');
     }
   };
 
-  const handleBrowseWithSession = () => {
+  const handleBrowseWithProfile = () => {
     try {
-      const savedSessions = localStorage.getItem('youtube-bubble-sessions');
+      const savedProfiles = localStorage.getItem('youtube-profiles');
       
-      if (savedSessions) {
-        const sessions = JSON.parse(savedSessions);
-        const activeSession = sessions.find((s: any) => s.isActive);
+      if (savedProfiles) {
+        const profiles = JSON.parse(savedProfiles);
+        const activeProfile = profiles.find((p: any) => p.isActive);
         
-        if (activeSession) {
-          console.log('🍪 Opening YouTube with full session data...');
+        if (activeProfile) {
+          console.log('🍪 Opening YouTube with full profile data...');
           
           const youtubeUrl = new URL('https://www.youtube.com');
-          youtubeUrl.searchParams.set('session_id', activeSession.id);
-          youtubeUrl.searchParams.set('bubble_strength', activeSession.bubbleStrength.toString());
+          youtubeUrl.searchParams.set('profile_id', activeProfile.id);
+          youtubeUrl.searchParams.set('bubble_strength', activeProfile.bubbleStrength.toString());
           
           window.open(youtubeUrl.toString(), '_blank');
           return;
@@ -162,10 +162,10 @@ export const Header: React.FC<HeaderProps> = ({
       }
       
       window.open('https://www.youtube.com', '_blank');
-      console.log('🔗 Opening YouTube with current browser session...');
+      console.log('🔗 Opening YouTube with current browser profile...');
       
     } catch (error) {
-      console.error('❌ Failed to load session:', error);
+      console.error('❌ Failed to load profile:', error);
       window.open('https://www.youtube.com', '_blank');
     }
   };
@@ -334,23 +334,23 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>Browse Anonymous</span>
               </button>
 
-              {/* Browse with Session Button */}
+              {/* Browse with Profile Button */}
               <button
-                onClick={handleBrowseWithSession}
+                onClick={handleBrowseWithProfile}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                title="Öffnet YouTube mit vollständiger Session"
+                title="Öffnet YouTube mit vollständigem Profile"
               >
                 <Eye className="h-4 w-4" />
                 <Save className="h-4 w-4" />
-                <span>Browse with Session</span>
+                <span>Browse with Profile</span>
               </button>
               
               <button
-                onClick={() => setShowSessionLoader(true)}
+                onClick={() => setShowProfileLoader(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
               >
                 <Save className="h-4 w-4" />
-                <span>Load Session</span>
+                <span>Load Profile</span>
               </button>
               
               <button
@@ -381,16 +381,16 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
 
-      <SessionLoader
-        isVisible={showSessionLoader}
-        onClose={() => setShowSessionLoader(false)}
-        onLoadSession={(session) => {
-          onLoadSession?.(session);
-          setShowSessionLoader(false);
+      <ProfileLoader
+        isVisible={showProfileLoader}
+        onClose={() => setShowProfileLoader(false)}
+        onLoadProfile={(profile) => {
+          onLoadProfile?.(profile);
+          setShowProfileLoader(false);
         }}
-        onCreateSession={() => {
-          onCreateSession?.();
-          setShowSessionLoader(false);
+        onCreateProfile={() => {
+          onCreateProfile?.();
+          setShowProfileLoader(false);
         }}
         currentPreset={currentPreset}
         currentAlgorithmState={currentAlgorithmState}

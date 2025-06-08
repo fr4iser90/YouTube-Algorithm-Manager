@@ -1,16 +1,16 @@
 import React from 'react';
-import { TrainingSession } from '../types';
+import { TrainingProfile } from '../types';
 import { motion } from 'framer-motion';
 import { Pause, Square, Activity } from 'lucide-react';
 
 interface TrainingProgressProps {
-  session: TrainingSession;
+  profile: TrainingProfile;
   onPause: () => void;
   onStop: () => void;
 }
 
 export const TrainingProgress: React.FC<TrainingProgressProps> = ({
-  session,
+  profile,
   onPause,
   onStop
 }) => {
@@ -25,7 +25,7 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
           <Activity className="h-5 w-5 text-blue-400 animate-pulse" />
           <div>
             <h3 className="text-lg font-semibold text-white">Training in Progress</h3>
-            <p className="text-sm text-gray-400">{session.currentAction}</p>
+            <p className="text-sm text-gray-400">{profile.currentAction}</p>
           </div>
         </div>
         
@@ -50,20 +50,20 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
       <div className="mb-2">
         <div className="flex justify-between text-sm text-gray-300 mb-1">
           <span>Progress</span>
-          <span>{Math.round(session.progress)}%</span>
+          <span>{Math.round(profile.progress)}%</span>
         </div>
         <div className="w-full bg-gray-700 rounded-full h-2">
           <motion.div
             className="bg-blue-500 h-2 rounded-full"
             initial={{ width: 0 }}
-            animate={{ width: `${session.progress}%` }}
+            animate={{ width: `${profile.progress}%` }}
             transition={{ duration: 0.5 }}
           />
         </div>
       </div>
 
       <div className="text-xs text-gray-500">
-        Started: {session.startTime.toLocaleTimeString()}
+        Started: {profile.startTime.toLocaleTimeString()}
       </div>
     </motion.div>
   );

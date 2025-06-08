@@ -3,7 +3,7 @@ import { Save, Play, Trash2, Download, Upload, Clock, Target, Globe, Users, Star
 import { motion, AnimatePresence } from 'framer-motion';
 import { BubblePreset, AlgorithmState } from '../types';
 
-interface SavedSession {
+interface SavedProfile {
   id: string;
   name: string;
   description: string;
@@ -22,71 +22,71 @@ interface SavedSession {
   tags: string[];
 }
 
-interface SessionLoaderProps {
-  onLoadSession: (session: SavedSession) => void;
-  onCreateSession: () => void;
+interface ProfileLoaderProps {
+  onLoadProfile: (profile: SavedProfile) => void;
+  onCreateProfile: () => void;
   currentPreset?: BubblePreset;
   currentAlgorithmState?: AlgorithmState;
   isVisible: boolean;
   onClose: () => void;
 }
 
-export const SessionLoader: React.FC<SessionLoaderProps> = ({
-  onLoadSession,
-  onCreateSession,
+export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
+  onLoadProfile,
+  onCreateProfile,
   currentPreset,
   currentAlgorithmState,
   isVisible,
   onClose
 }) => {
-  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
-  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'lastUsed' | 'bubbleStrength' | 'name' | 'createdAt'>('lastUsed');
   const [filterTag, setFilterTag] = useState<string>('all');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [newSessionName, setNewSessionName] = useState('');
-  const [newSessionDescription, setNewSessionDescription] = useState('');
-  const [newSessionTags, setNewSessionTags] = useState<string[]>([]);
+  const [newProfileName, setNewProfileName] = useState('');
+  const [newProfileDescription, setNewProfileDescription] = useState('');
+  const [newProfileTags, setNewProfileTags] = useState<string[]>([]);
 
-  // Load saved sessions from localStorage
+  // Load saved profiles from localStorage
   useEffect(() => {
-    loadSavedSessions();
+    loadSavedProfiles();
   }, []);
 
-  const loadSavedSessions = () => {
+  const loadSavedProfiles = () => {
     try {
-      const saved = localStorage.getItem('youtube-bubble-sessions');
+      const saved = localStorage.getItem('youtube-profiles');
       if (saved) {
-        const sessions = JSON.parse(saved, (key, value) => {
+        const profiles = JSON.parse(saved, (key, value) => {
           if (key.endsWith('At')) {
             return new Date(value);
           }
           return value;
         });
-        setSavedSessions(sessions);
+        setSavedProfiles(profiles);
       }
     } catch (error) {
-      console.error('Failed to load saved sessions:', error);
+      console.error('Failed to load saved profiles:', error);
     }
   };
 
-  const saveSessions = (sessions: SavedSession[]) => {
+  const saveProfiles = (profiles: SavedProfile[]) => {
     try {
-      localStorage.setItem('youtube-bubble-sessions', JSON.stringify(sessions));
-      setSavedSessions(sessions);
+      localStorage.setItem('youtube-profiles', JSON.stringify(profiles));
+      setSavedProfiles(profiles);
     } catch (error) {
-      console.error('Failed to save sessions:', error);
+      console.error('Failed to save profiles:', error);
     }
   };
 
-  const saveCurrentSession = () => {
-    if (!currentPreset || !newSessionName.trim()) return;
+  const savecurrentProfile = () => {
+    if (!currentPreset || !newProfileName.trim()) return;
 
-    const newSession: SavedSession = {
+    const newProfile: SavedProfile = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      name: newSessionName.trim(),
-      description: newSessionDescription.trim(),
+      name: newProfileName.trim(),
+      description: newProfileDescription.trim(),
       preset: currentPreset,
       algorithmState: currentAlgorithmState || {
         timestamp: new Date(),
@@ -109,80 +109,80 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
       totalSearches: Math.floor(Math.random() * 50) + 20,
       trainingHours: Math.floor(Math.random() * 10) + 2,
       isActive: false,
-      tags: newSessionTags
+      tags: newProfileTags
     };
 
-    const updatedSessions = [...savedSessions, newSession];
-    saveSessions(updatedSessions);
+    const updatedProfiles = [...savedProfiles, newProfile];
+    saveProfiles(updatedProfiles);
     
     setShowSaveDialog(false);
-    setNewSessionName('');
-    setNewSessionDescription('');
-    setNewSessionTags([]);
+    setNewProfileName('');
+    setNewProfileDescription('');
+    setNewProfileTags([]);
   };
 
-  const loadSession = (session: SavedSession) => {
+  const loadProfile = (profile: SavedProfile) => {
     try {
       // Restore cookies
-      const cookieData = JSON.parse(atob(session.cookies));
+      const cookieData = JSON.parse(atob(profile.cookies));
       // Note: In real implementation, you'd need to properly restore cookies
       
       // Restore localStorage (carefully to not overwrite app data)
-      const localStorageData = JSON.parse(atob(session.localStorage));
+      const localStorageData = JSON.parse(atob(profile.localStorage));
       Object.keys(localStorageData).forEach(key => {
         if (key.startsWith('youtube-') || key.startsWith('bubble-')) {
           localStorage.setItem(key, localStorageData[key]);
         }
       });
 
-      // Mark session as active and update last used
-      const updatedSessions = savedSessions.map(s => ({
+      // Mark profile as active and update last used
+      const updatedProfiles = savedProfiles.map(s => ({
         ...s,
-        isActive: s.id === session.id,
-        lastUsed: s.id === session.id ? new Date() : s.lastUsed
+        isActive: s.id === profile.id,
+        lastUsed: s.id === profile.id ? new Date() : s.lastUsed
       }));
-      saveSessions(updatedSessions);
+      saveProfiles(updatedProfiles);
 
-      onLoadSession(session);
+      onLoadProfile(profile);
       onClose();
     } catch (error) {
-      console.error('Failed to load session:', error);
+      console.error('Failed to load profile:', error);
     }
   };
 
-  const deleteSession = (sessionId: string) => {
-    const updatedSessions = savedSessions.filter(s => s.id !== sessionId);
-    saveSessions(updatedSessions);
+  const deleteProfile = (profileId: string) => {
+    const updatedProfiles = savedProfiles.filter(s => s.id !== profileId);
+    saveProfiles(updatedProfiles);
   };
 
-  const duplicateSession = (session: SavedSession) => {
-    const duplicated: SavedSession = {
-      ...session,
+  const duplicateProfile = (profile: SavedProfile) => {
+    const duplicated: SavedProfile = {
+      ...profile,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      name: `${session.name} (Copy)`,
+      name: `${profile.name} (Copy)`,
       createdAt: new Date(),
       lastUsed: new Date(),
       isActive: false
     };
     
-    const updatedSessions = [...savedSessions, duplicated];
-    saveSessions(updatedSessions);
+    const updatedProfiles = [...savedProfiles, duplicated];
+    saveProfiles(updatedProfiles);
   };
 
-  const exportSessions = () => {
-    const dataStr = JSON.stringify(savedSessions, null, 2);
+  const exportProfiles = () => {
+    const dataStr = JSON.stringify(savedProfiles, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'youtube-bubble-sessions.json';
+    link.download = 'youtube-bubble-profiles.json';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
-  const importSessions = () => {
+  const importProfiles = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -192,17 +192,17 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
         const reader = new FileReader();
         reader.onload = (e) => {
           try {
-            const importedSessions = JSON.parse(e.target?.result as string, (key, value) => {
+            const importedProfiles = JSON.parse(e.target?.result as string, (key, value) => {
               if (key.endsWith('At')) {
                 return new Date(value);
               }
               return value;
             });
             
-            const mergedSessions = [...savedSessions, ...importedSessions];
-            saveSessions(mergedSessions);
+            const mergedProfiles = [...savedProfiles, ...importedProfiles];
+            saveProfiles(mergedProfiles);
           } catch (error) {
-            alert('Invalid session file format');
+            alert('Invalid profile file format');
           }
         };
         reader.readAsText(file);
@@ -211,12 +211,12 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
     input.click();
   };
 
-  const filteredAndSortedSessions = savedSessions
-    .filter(session => {
-      const matchesSearch = session.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           session.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           session.preset.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTag = filterTag === 'all' || session.tags.includes(filterTag);
+  const filteredAndSortedProfiles = savedProfiles
+    .filter(profile => {
+      const matchesSearch = profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           profile.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           profile.preset.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTag = filterTag === 'all' || profile.tags.includes(filterTag);
       return matchesSearch && matchesTag;
     })
     .sort((a, b) => {
@@ -234,7 +234,7 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
       }
     });
 
-  const allTags = Array.from(new Set(savedSessions.flatMap(s => s.tags)));
+  const allTags = Array.from(new Set(savedProfiles.flatMap(s => s.tags)));
 
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
@@ -267,14 +267,14 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
           <div className="flex items-center space-x-3">
             <Save className="h-6 w-6 text-blue-400" />
             <div>
-              <h2 className="text-xl font-bold text-white">Session Manager</h2>
-              <p className="text-sm text-gray-400">Load saved bubble sessions with persistent cookies</p>
+              <h2 className="text-xl font-bold text-white">Profile Manager</h2>
+              <p className="text-sm text-gray-400">Load saved bubble profiles with persistent cookies</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-2">
             <button
-              onClick={importSessions}
+              onClick={importProfiles}
               className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
             >
               <Upload className="h-4 w-4" />
@@ -282,7 +282,7 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
             </button>
             
             <button
-              onClick={exportSessions}
+              onClick={exportProfiles}
               className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
             >
               <Download className="h-4 w-4" />
@@ -312,7 +312,7 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search sessions..."
+                placeholder="Search profiles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -343,54 +343,54 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
           </div>
 
           <div className="text-sm text-gray-400">
-            {filteredAndSortedSessions.length} session{filteredAndSortedSessions.length !== 1 ? 's' : ''} found
+            {filteredAndSortedProfiles.length} profile{filteredAndSortedProfiles.length !== 1 ? 's' : ''} found
           </div>
         </div>
 
-        {/* Sessions List */}
+        {/* Profiles List */}
         <div className="p-6 overflow-y-auto max-h-[60vh]">
-          {filteredAndSortedSessions.length === 0 ? (
+          {filteredAndSortedProfiles.length === 0 ? (
             <div className="text-center py-12">
               <Save className="h-16 w-16 text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">No Sessions Found</h3>
+              <h3 className="text-lg font-medium text-white mb-2">No Profiles Found</h3>
               <p className="text-gray-400 mb-4">
-                {savedSessions.length === 0 
-                  ? 'Create your first session to get started'
+                {savedProfiles.length === 0 
+                  ? 'Create your first profile to get started'
                   : 'Try adjusting your search or filters'
                 }
               </p>
               <button
-                onClick={onCreateSession}
+                onClick={onCreateProfile}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
               >
-                Create First Session
+                Create First Profile
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredAndSortedSessions.map(session => (
+              {filteredAndSortedProfiles.map(profile => (
                 <motion.div
-                  key={session.id}
+                  key={profile.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                    session.isActive
+                    profile.isActive
                       ? 'bg-green-900/30 border-green-500 ring-2 ring-green-500/50'
-                      : selectedSession === session.id
+                      : selectedProfile === profile.id
                       ? 'bg-blue-900/30 border-blue-500'
                       : 'bg-gray-700/50 border-gray-600 hover:border-gray-500'
                   }`}
-                  onClick={() => setSelectedSession(session.id)}
-                  onDoubleClick={() => loadSession(session)}
+                  onClick={() => setSelectedProfile(profile.id)}
+                  onDoubleClick={() => loadProfile(profile)}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <div 
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: session.preset.color }}
+                        style={{ backgroundColor: profile.preset.color }}
                       />
-                      <h3 className="font-semibold text-white">{session.name}</h3>
-                      {session.isActive && (
+                      <h3 className="font-semibold text-white">{profile.name}</h3>
+                      {profile.isActive && (
                         <div className="px-2 py-1 bg-green-600 text-white text-xs rounded">
                           Active
                         </div>
@@ -401,7 +401,7 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          duplicateSession(session);
+                          duplicateProfile(profile);
                         }}
                         className="p-1 text-gray-400 hover:text-blue-400 transition-colors"
                         title="Duplicate"
@@ -411,7 +411,7 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteSession(session.id);
+                          deleteProfile(profile.id);
                         }}
                         className="p-1 text-gray-400 hover:text-red-400 transition-colors"
                         title="Delete"
@@ -422,36 +422,36 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
                   </div>
 
                   <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-                    {session.description || session.preset.description}
+                    {profile.description || profile.preset.description}
                   </p>
 
                   <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Target className="h-3 w-3" />
-                      <span>{session.bubbleStrength}% Bubble</span>
+                      <span>{profile.bubbleStrength}% Bubble</span>
                     </div>
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Play className="h-3 w-3" />
-                      <span>{session.totalVideosWatched} Videos</span>
+                      <span>{profile.totalVideosWatched} Videos</span>
                     </div>
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Globe className="h-3 w-3" />
-                      <span>{session.preset.language.toUpperCase()}/{session.preset.region}</span>
+                      <span>{profile.preset.language.toUpperCase()}/{profile.preset.region}</span>
                     </div>
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Clock className="h-3 w-3" />
-                      <span>{session.trainingHours}h Training</span>
+                      <span>{profile.trainingHours}h Training</span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>Last used: {formatTimeAgo(session.lastUsed)}</span>
-                    <span>{session.preset.category}</span>
+                    <span>Last used: {formatTimeAgo(profile.lastUsed)}</span>
+                    <span>{profile.preset.category}</span>
                   </div>
 
-                  {session.tags.length > 0 && (
+                  {profile.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {session.tags.slice(0, 3).map(tag => (
+                      {profile.tags.slice(0, 3).map(tag => (
                         <span
                           key={tag}
                           className="px-2 py-1 bg-gray-600 text-gray-300 text-xs rounded"
@@ -459,15 +459,15 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
                           {tag}
                         </span>
                       ))}
-                      {session.tags.length > 3 && (
+                      {profile.tags.length > 3 && (
                         <span className="px-2 py-1 bg-gray-600 text-gray-300 text-xs rounded">
-                          +{session.tags.length - 3}
+                          +{profile.tags.length - 3}
                         </span>
                       )}
                     </div>
                   )}
 
-                  {selectedSession === session.id && (
+                  {selectedProfile === profile.id && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
@@ -476,12 +476,12 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          loadSession(session);
+                          loadProfile(profile);
                         }}
                         className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
                       >
                         <Play className="h-4 w-4" />
-                        <span>Load Session (Instant)</span>
+                        <span>Load Profile (Instant)</span>
                       </button>
                     </motion.div>
                   )}
@@ -508,19 +508,19 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-gray-800 rounded-lg border border-gray-700 w-full max-w-md p-6"
             >
-              <h3 className="text-lg font-bold text-white mb-4">Save Current Session</h3>
+              <h3 className="text-lg font-bold text-white mb-4">Save Current Profile</h3>
               
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Session Name *
+                    Profile Name *
                   </label>
                   <input
                     type="text"
-                    value={newSessionName}
-                    onChange={(e) => setNewSessionName(e.target.value)}
+                    value={newProfileName}
+                    onChange={(e) => setNewProfileName(e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter session name..."
+                    placeholder="Enter profile name..."
                   />
                 </div>
 
@@ -529,11 +529,11 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
                     Description
                   </label>
                   <textarea
-                    value={newSessionDescription}
-                    onChange={(e) => setNewSessionDescription(e.target.value)}
+                    value={newProfileDescription}
+                    onChange={(e) => setNewProfileDescription(e.target.value)}
                     rows={3}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Describe this session..."
+                    placeholder="Describe this profile..."
                   />
                 </div>
 
@@ -543,8 +543,8 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={newSessionTags.join(', ')}
-                    onChange={(e) => setNewSessionTags(e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+                    value={newProfileTags.join(', ')}
+                    onChange={(e) => setNewProfileTags(e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="tech, ai, research..."
                   />
@@ -559,11 +559,11 @@ export const SessionLoader: React.FC<SessionLoaderProps> = ({
                   Cancel
                 </button>
                 <button
-                  onClick={saveCurrentSession}
-                  disabled={!newSessionName.trim()}
+                  onClick={savecurrentProfile}
+                  disabled={!newProfileName.trim()}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors"
                 >
-                  Save Session
+                  Save Profile
                 </button>
               </div>
             </motion.div>

@@ -4,7 +4,7 @@ import { PresetCard } from './components/PresetCard';
 import { PresetEditor } from './components/PresetEditor';
 import { TrainingProgress } from './components/TrainingProgress';
 import { AlgorithmAnalysis } from './components/AlgorithmAnalysis';
-import { SessionManager } from './components/SessionManager';
+import { BubbleProfileController } from './components/BubbleProfileController';
 import { BrowserController } from './components/BrowserController';
 import { YouTubeAutomation } from './components/YouTubeAutomation';
 import { RealTimeAnalytics } from './components/RealTimeAnalytics';
@@ -13,14 +13,14 @@ import { MLAnalytics } from './components/MLAnalytics';
 import { ExtensionBridge } from './components/ExtensionBridge';
 import { useLocalStorage, dateReviver } from './hooks/useLocalStorage';
 import { presetTemplates } from './data/presetTemplates';
-import { BubblePreset, TrainingSession, AlgorithmState } from './types';
+import { BubblePreset, TrainingProfile, AlgorithmState } from './types';
 import { Plus, Filter, Search, Settings as SettingsIcon, Brain, Shield, Chrome } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function App() {
-  const [presets, setPresets] = useLocalStorage<BubblePreset[]>('bubble-presets', []);
+  const [presets, setPresets] = useLocalStorage<BubblePreset[]>('youtube-presets', []);
   const [algorithmHistory, setAlgorithmHistory] = useLocalStorage<AlgorithmState[]>('algorithm-history', []);
-  const [currentSession, setCurrentSession] = useState<TrainingSession | null>(null);
+  const [currentProfile, setcurrentProfile] = useState<TrainingProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [languageFilter, setLanguageFilter] = useState<string>('all');
@@ -30,7 +30,7 @@ function App() {
   const [browserSettings, setBrowserSettings] = useState<any>({});
   const [anonymousConfig, setAnonymousConfig] = useState<any>({});
   const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [activeProfileId, setactiveProfileId] = useState<string | null>(null);
   const [extensionTrainingActive, setExtensionTrainingActive] = useState(false);
 
   // Initialize with template presets if none exist
@@ -45,61 +45,62 @@ function App() {
     }
   }, [presets.length, setPresets]);
 
-  // Auto-load last active session on startup
+  // Auto-load last active profile on startup
   useEffect(() => {
-    const autoLoadSession = () => {
+    const autoLoadProfile = () => {
       try {
-        const savedSessions = localStorage.getItem('youtube-bubble-sessions');
-        if (savedSessions) {
-          const sessions = JSON.parse(savedSessions, dateReviver);
-          const activeSession = sessions.find((s: any) => s.isActive);
+        const savedProfiles = localStorage.getItem('youtube-profiles');
+        if (savedProfiles) {
+          const profiles = JSON.parse(savedProfiles, dateReviver);
+          const activeProfile = profiles.find((s: any) => s.isActive);
           
-          if (activeSession && browserSettings.bubbleLoadStrategy === 'quick') {
-            console.log('🚀 Auto-loading active session:', activeSession.name);
-            loadSessionData(activeSession);
+          if (activeProfile && browserSettings.bubbleLoadStrategy === 'quick') {
+            console.log('🚀 Auto-loading active profile:', activeProfile.name);
+            loadProfileData(activeProfile);
           }
         }
       } catch (error) {
-        console.error('Failed to auto-load session:', error);
+        console.error('Failed to auto-load profile:', error);
       }
     };
 
     // Auto-load after a short delay to ensure components are ready
-    const timer = setTimeout(autoLoadSession, 1000);
+    const timer = setTimeout(autoLoadProfile, 1000);
     return () => clearTimeout(timer);
   }, [browserSettings.bubbleLoadStrategy]);
 
-  const loadSessionData = (session: any) => {
+  const loadProfileData = (profile: any) => {
     try {
       // Restore algorithm state
-      if (session.algorithmState) {
+      if (profile.algorithmState) {
         setAlgorithmHistory(prev => {
-          const filtered = prev.filter(state => state.timestamp !== session.algorithmState.timestamp);
-          return [...filtered, session.algorithmState];
+          const filtered = prev.filter(state => state.timestamp !== profile.algorithmState.timestamp);
+          return [...filtered, profile.algorithmState];
         });
       }
 
-      // Set active session
-      setActiveSessionId(session.id);
+      // Set active profile
+      setactiveProfileId(profile.id);
       
       // Simulate quick bubble loading
-      console.log(`✅ Session "${session.name}" loaded instantly with ${session.bubbleStrength}% bubble strength`);
+      console.log(`✅ Profile "${profile.name}" loaded instantly with ${profile.bubbleStrength}% bubble strength`);
       
       // Update recommendations if available
-      if (session.algorithmState?.recommendations) {
-        setRecommendations(session.algorithmState.recommendations);
+      if (profile.algorithmState?.recommendations) {
+        setRecommendations(profile.algorithmState.recommendations);
       }
 
     } catch (error) {
-      console.error('Failed to load session data:', error);
+      console.error('Failed to load profile data:', error);
     }
   };
 
   const handleTrainPreset = async (preset: BubblePreset) => {
-    if (currentSession || extensionTrainingActive) return;
+    if (currentProfile || extensionTrainingActive) return;
 
-    // Check if extension is available
+    // Verbesserte Extension-Erkennung
     const extensionAvailable = !!(
+      localStorage.getItem('yt-trainer-extension-status') ||
       localStorage.getItem('yt-trainer-extension-info') ||
       document.querySelector('#yt-trainer-extension-marker') ||
       (window as any).ytTrainerExtension
@@ -190,7 +191,7 @@ function App() {
   };
 
   const handleStopTraining = () => {
-    setCurrentSession(null);
+    setcurrentProfile(null);
     setExtensionTrainingActive(false);
     
     // Stop extension training
@@ -204,8 +205,8 @@ function App() {
     }
   };
 
-  const handleLoadSession = (session: any) => {
-    loadSessionData(session);
+  const handleLoadProfile = (profile: any) => {
+    loadProfileData(profile);
   };
 
   const handleExtensionTrainingStart = (preset: BubblePreset) => {
@@ -251,7 +252,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'youtube-bubble-manager-export.json';
+    a.download = 'youtube-manager-export.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -296,7 +297,7 @@ function App() {
 
   const currentAlgorithmState = algorithmHistory[algorithmHistory.length - 1];
   const availableLanguages = Array.from(new Set(presets.map(p => p.language || 'en')));
-  const currentPreset = currentSession ? presets.find(p => p.id === currentSession.presetId) : undefined;
+  const currentPreset = currentProfile ? presets.find(p => p.id === currentProfile.presetId) : undefined;
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -306,13 +307,13 @@ function App() {
         onSettings={() => setShowAdvancedSettings(!showAdvancedSettings)}
         currentPreset={currentPreset}
         currentAlgorithmState={currentAlgorithmState}
-        onLoadSession={handleLoadSession}
-        onCreateSession={handleCreatePreset}
+        onLoadProfile={handleLoadProfile}
+        onCreateProfile={handleCreatePreset}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Active Session Indicator */}
-        {activeSessionId && (
+        {/* Active Profile Indicator */}
+        {activeProfileId && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -321,7 +322,7 @@ function App() {
             <div className="flex items-center space-x-3">
               <Chrome className="h-5 w-5 text-green-400" />
               <div>
-                <h3 className="text-green-300 font-medium">Session Active</h3>
+                <h3 className="text-green-300 font-medium">Profile Active</h3>
                 <p className="text-green-200 text-sm">
                   Bubble loaded instantly with persistent cookies. Ready for training or browsing.
                 </p>
@@ -440,7 +441,7 @@ function App() {
           </div>
         )}
 
-        {/* Analysis and Session Management */}
+        {/* Analysis and Profile Management */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <div className="lg:col-span-2">
             <AlgorithmAnalysis
@@ -449,14 +450,14 @@ function App() {
             />
           </div>
           <div>
-            <SessionManager />
+            <BubbleProfileController />
           </div>
         </div>
 
         {/* Presets Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Bubble Presets</h2>
+            <h2 className="text-2xl font-bold text-white">YouTube Presets</h2>
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}

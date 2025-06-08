@@ -1,6 +1,6 @@
 // Automation Manager - Orchestrates the entire training process
 import { RealYouTubeBrowserController, createRealBrowserController, RealBrowserConfig } from './realBrowserAutomation';
-import { BubblePreset, TrainingSession, AlgorithmState } from '../types';
+import { BubblePreset, TrainingProfile, AlgorithmState } from '../types';
 
 export interface AutomationProgress {
   currentAction: string;
@@ -14,7 +14,7 @@ export interface AutomationProgress {
 export class AutomationManager {
   private browserController: RealYouTubeBrowserController | null = null;
   private isRunning: boolean = false;
-  private currentSession: TrainingSession | null = null;
+  private currentProfile: TrainingProfile | null = null;
 
   async startTraining(
     preset: BubblePreset,

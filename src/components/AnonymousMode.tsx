@@ -145,10 +145,10 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
 
   const getCookieStrategyDescription = (strategy: string) => {
     switch (strategy) {
-      case 'persist': return 'Cookies persist - Fast bubble loading';
-      case 'session': return 'Session cookies only - Medium anonymity';
-      case 'clear': return 'Always clear cookies - High anonymity';
-      case 'rotate': return 'Rotate bubble profiles - Maximum flexibility';
+      case 'persist': return 'Profile cookies persist - Low anonymity';
+      case 'profile': return 'Profile cookies only - Medium anonymity';
+      case 'clear': return 'No cookies - High anonymity';
+      case 'rotate': return 'Rotating cookies - Maximum anonymity';
       default: return '';
     }
   };
@@ -225,13 +225,12 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
             <select
               value={config.cookieStrategy}
               onChange={(e) => updateConfig('cookieStrategy', e.target.value as any)}
-              disabled={!config.enabled}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="persist">Persistent - Bubble stays active</option>
-              <option value="session">Session - Browser session only</option>
-              <option value="clear">Clear - Always delete (max anonymity)</option>
-              <option value="rotate">Rotate - Switch between bubble profiles</option>
+              <option value="persist">Persistent - Keep all cookies</option>
+              <option value="profile">Profile - Browser runtime only</option>
+              <option value="clear">Clear - No cookies</option>
+              <option value="rotate">Rotate - Random cookies</option>
             </select>
             <p className="text-xs text-gray-400 mt-1">
               {getCookieStrategyDescription(config.cookieStrategy)}
@@ -447,7 +446,7 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
             <h5 className="text-yellow-300 font-medium text-sm">Cookie Strategy Guide</h5>
             <div className="text-yellow-200 text-xs mt-2 space-y-1">
               <div><strong>Persistent Cookies:</strong> Bubble stays active, fastest startup</div>
-              <div><strong>Session Cookies:</strong> Bubble only during browser session</div>
+              <div><strong>Profile Cookies:</strong> Bubble only during browser session</div>
               <div><strong>Clear Cookies:</strong> Maximum anonymity, but bubble must rebuild</div>
               <div><strong>Rotate Profiles:</strong> Switch between different bubbles</div>
             </div>

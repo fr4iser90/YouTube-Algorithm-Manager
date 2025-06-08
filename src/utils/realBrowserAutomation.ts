@@ -362,7 +362,7 @@ export class RealYouTubeBrowserController {
         sessionStorage.clear();
       });
 
-      const client = await this.page.target().createCDPSession();
+      const client = await this.page.target().createCDPProfile();
       await client.send('Network.clearBrowserCookies');
       await client.send('Network.clearBrowserCache');
 

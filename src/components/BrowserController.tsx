@@ -13,7 +13,7 @@ interface BrowserSettings {
   viewport: { width: number; height: number };
   cookiePersistence: 'none' | 'session' | 'persistent';
   bubbleLoadStrategy: 'fresh' | 'restore' | 'quick';
-  sessionManagement: 'isolated' | 'shared' | 'profile-based';
+  profileManagement: 'isolated' | 'shared' | 'profile-based';
 }
 
 interface BrowserControllerProps {
@@ -36,7 +36,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
     viewport: { width: 1920, height: 1080 },
     cookiePersistence: 'persistent', // New: Keep cookies for bubble loading
     bubbleLoadStrategy: 'quick', // New: Quick bubble loading
-    sessionManagement: 'profile-based' // New: Profile-based session management
+    profileManagement: 'profile-based' // New: Profile-based session management
   });
 
   const [bubbleLoadTime, setBubbleLoadTime] = useState<number>(0);
@@ -69,10 +69,10 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
     }
   };
 
-  const getSessionDescription = (management: string) => {
+  const getProfileDescription = (management: string) => {
     switch (management) {
-      case 'isolated': return 'Each session isolated - Maximum security';
-      case 'shared': return 'Sessions share data - Better continuity';
+      case 'isolated': return 'Each profile isolated - Maximum security';
+      case 'shared': return 'Profiles share data - Better continuity';
       case 'profile-based': return 'Profile-based - Optimal balance';
       default: return '';
     }
@@ -154,12 +154,11 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
             <select
               value={settings.cookiePersistence}
               onChange={(e) => updateSetting('cookiePersistence', e.target.value as any)}
-              disabled={isTraining}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="persistent">Persistent - Cookies stay active</option>
-              <option value="session">Session - Only during browser runtime</option>
-              <option value="none">None - No cookie storage</option>
+              <option value="none">None - No cookies</option>
+              <option value="profile">Profile - Only during browser runtime</option>
+              <option value="persistent">Persistent - Keep all cookies</option>
             </select>
           </div>
 

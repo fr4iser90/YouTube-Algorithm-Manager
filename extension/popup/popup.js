@@ -182,7 +182,7 @@ class PopupManager {
       const quickPreset = {
         id: 'quick-start',
         name: 'Quick Start',
-        description: 'Quick training session',
+        description: 'Quick training profile',
         category: 'tech',
         language: 'en',
         region: 'US',

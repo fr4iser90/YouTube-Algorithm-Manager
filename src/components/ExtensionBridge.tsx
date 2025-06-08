@@ -50,86 +50,34 @@ export const ExtensionBridge: React.FC<ExtensionBridgeProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const checkExtensionStatus = async () => {
+  const checkExtensionStatus = () => {
     try {
-      setIsChecking(true);
-      
-      let isInstalled = false;
-      let isConnected = false;
-      let version = undefined;
-      let isTraining = false;
-      let detectionMethod = 'not-found';
-      
-      // EINFACHE LÖSUNG: Lese Extension-Status aus localStorage
-      // Das funktioniert auch cross-domain!
-      try {
-        const extensionData = localStorage.getItem('yt-trainer-extension-status');
-        if (extensionData) {
-          const data = JSON.parse(extensionData);
-          const now = Date.now();
-          
-          // Check if data is recent (within 10 seconds)
-          if (now - data.timestamp < 10000) {
-            isInstalled = true;
-            isConnected = true;
-            version = data.version;
-            isTraining = data.isTraining || false;
-            detectionMethod = 'localStorage';
-            
-            console.log('✅ Extension found via localStorage:', data);
-          } else {
-            console.log('⚠️ Extension data is too old:', Math.round((now - data.timestamp) / 1000) + 's');
-          }
-        }
-      } catch (error) {
-        console.log('localStorage check failed:', error);
-      }
-      
-      // Backup: Check sessionStorage
-      if (!isInstalled) {
-        try {
-          const sessionData = sessionStorage.getItem('yt-trainer-extension-status');
-          if (sessionData) {
-            const data = JSON.parse(sessionData);
-            const now = Date.now();
-            
-            if (now - data.timestamp < 10000) {
-              isInstalled = true;
-              isConnected = true;
-              version = data.version;
-              isTraining = data.isTraining || false;
-              detectionMethod = 'sessionStorage';
-              
-              console.log('✅ Extension found via sessionStorage:', data);
-            }
-          }
-        } catch (error) {
-          console.log('sessionStorage check failed:', error);
-        }
-      }
+      // Prüfe alle möglichen Extension-Signale
+      const extensionStatus = !!(
+        localStorage.getItem('yt-trainer-extension-status') ||
+        localStorage.getItem('yt-trainer-extension-info') ||
+        document.querySelector('#yt-trainer-extension-marker') ||
+        (window as any).ytTrainerExtension
+      );
 
-      const statusResult = {
-        isInstalled,
+      const isConnected = !!localStorage.getItem('yt-trainer-extension-status');
+      const statusData = localStorage.getItem('yt-trainer-extension-status');
+      const isTraining = statusData ? statusData.includes('"isTraining":true') : false;
+
+      setExtensionStatus({
+        isInstalled: extensionStatus,
         isConnected,
-        version,
-        isTraining,
-        currentPreset: isTraining ? 'Active Training' : undefined,
-        detectionMethod
-      };
+        isTraining
+      });
 
-      console.log('🔍 Extension status check result:', statusResult);
-      setExtensionStatus(statusResult);
+      console.log('🔍 Extension Status:', {
+        isInstalled: extensionStatus,
+        isConnected,
+        isTraining
+      });
 
     } catch (error) {
       console.error('Error checking extension status:', error);
-      setExtensionStatus(prev => ({ 
-        ...prev, 
-        isInstalled: false, 
-        isConnected: false,
-        detectionMethod: 'error'
-      }));
-    } finally {
-      setIsChecking(false);
     }
   };
 
