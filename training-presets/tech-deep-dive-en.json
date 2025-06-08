@@ -1,0 +1,36 @@
+{
+  "name": "Tech Deep Dive (English)",
+  "description": "AI research, programming, and cutting-edge technology in English",
+  "category": "tech",
+  "color": "#3B82F6",
+  "language": "en",
+  "region": "US",
+  "searches": [
+    { "query": "AI research papers 2024", "frequency": 5, "duration": 120, "language": "en", "region": "US" },
+    { "query": "Rust programming tutorial", "frequency": 3, "duration": 90, "language": "en", "region": "US" },
+    { "query": "Machine learning explained", "frequency": 4, "duration": 100, "language": "en", "region": "US" },
+    { "query": "Tech conference talks", "frequency": 2, "duration": 150, "language": "en", "region": "US" },
+    { "query": "Open source projects", "frequency": 3, "duration": 80, "language": "en", "region": "US" },
+    { "query": "Software engineering best practices", "frequency": 2, "duration": 110, "language": "en", "region": "US" }
+  ],
+  "watchPatterns": [
+    { "category": "tech", "watchTime": 0.85, "engagement": "like", "language": "en" },
+    { "category": "programming", "watchTime": 0.90, "engagement": "like", "language": "en" },
+    { "category": "ai", "watchTime": 0.95, "engagement": "like", "language": "en" }
+  ],
+  "channelPreferences": [
+    { "channelId": "UC_x5XG1OV2P6uZZ5FSM9Ttw", "channelName": "Google DeepMind", "action": "prioritize", "reason": "High-quality AI research" },
+    { "channelId": "UCXuqSBlHAE6Xw-yeJA0Tunw", "channelName": "Linus Tech Tips", "action": "subscribe", "reason": "Tech reviews and news" },
+    { "channelId": "UC2eYFnH61tmytImy1mTYvhA", "channelName": "Luke Smith", "action": "avoid", "reason": "Too opinionated content" }
+  ],
+  "targetKeywords": ["AI", "machine learning", "programming", "tech", "software", "algorithm", "open source"],
+  "avoidKeywords": ["drama", "gossip", "clickbait", "reaction"],
+  "trainingDuration": 60,
+  "advancedOptions": {
+    "clearHistoryFirst": true,
+    "useIncognito": false,
+    "simulateRealTiming": true,
+    "engagementRate": 0.7,
+    "skipAds": true
+  }
+}

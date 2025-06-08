@@ -1,0 +1,35 @@
+{
+  "name": "Minimalist Living",
+  "description": "Simple living, productivity, and intentional lifestyle",
+  "category": "lifestyle",
+  "color": "#F59E0B",
+  "language": "en",
+  "region": "US",
+  "searches": [
+    { "query": "minimalist lifestyle", "frequency": 4, "duration": 70, "language": "en", "region": "US" },
+    { "query": "productivity systems", "frequency": 3, "duration": 85, "language": "en", "region": "US" },
+    { "query": "simple living tips", "frequency": 5, "duration": 60, "language": "en", "region": "US" },
+    { "query": "decluttering guide", "frequency": 2, "duration": 90, "language": "en", "region": "US" },
+    { "query": "mindful consumption", "frequency": 3, "duration": 75, "language": "en", "region": "US" },
+    { "query": "sustainable lifestyle", "frequency": 2, "duration": 95, "language": "en", "region": "US" }
+  ],
+  "watchPatterns": [
+    { "category": "lifestyle", "watchTime": 0.82, "engagement": "like", "language": "en" },
+    { "category": "productivity", "watchTime": 0.87, "engagement": "like", "language": "en" },
+    { "category": "wellness", "watchTime": 0.75, "engagement": "none", "language": "en" }
+  ],
+  "channelPreferences": [
+    { "channelId": "minimalist_channel", "channelName": "The Minimalists", "action": "prioritize", "reason": "Authentic minimalist content" },
+    { "channelId": "consumerist_channel", "channelName": "Buy More Stuff", "action": "block", "reason": "Promotes overconsumption" }
+  ],
+  "targetKeywords": ["minimalism", "simple", "productivity", "lifestyle", "wellness", "intentional", "sustainable"],
+  "avoidKeywords": ["consumerism", "shopping haul", "materialism", "excess"],
+  "trainingDuration": 35,
+  "advancedOptions": {
+    "clearHistoryFirst": false,
+    "useIncognito": false,
+    "simulateRealTiming": true,
+    "engagementRate": 0.6,
+    "skipAds": true
+  }
+}

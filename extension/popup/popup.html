@@ -257,6 +257,200 @@
     .notification.error {
       background: #EF4444;
     }
+
+    /* Floating Action Button for Profiles */
+    .fab-profiles {
+      position: fixed;
+      bottom: 80px;
+      right: 30px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .fab-profiles:hover {
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.35);
+      transform: translateY(-2px) scale(1.05);
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(30, 41, 59, 0.55);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Modal Window */
+    .modal-window {
+      background: rgba(34, 34, 48, 0.95);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.18);
+      padding: 28px 24px 20px 24px;
+      min-width: 290px;
+      max-width: 340px;
+      width: 100%;
+      position: relative;
+      animation: modalPop 0.25s;
+    }
+    @keyframes modalPop {
+      from { transform: scale(0.95); opacity: 0.7; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.01em;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      transition: color 0.2s;
+      margin-left: 8px;
+    }
+    .modal-close:hover {
+      color: #8B5CF6;
+    }
+
+    .modal-content {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .profile-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .profile-card {
+      display: flex;
+      align-items: center;
+      background: linear-gradient(120deg, rgba(59,130,246,0.10) 0%, rgba(139,92,246,0.10) 100%);
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.08);
+      padding: 14px 16px;
+      transition: box-shadow 0.2s, transform 0.2s;
+      position: relative;
+      border: 2px solid transparent;
+    }
+    .profile-card:hover {
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.18);
+      transform: translateY(-2px) scale(1.02);
+      border-color: #8B5CF6;
+    }
+    .profile-card.active {
+      border-color: #10B981;
+      background: linear-gradient(120deg, rgba(16,185,129,0.15) 0%, rgba(59,130,246,0.10) 100%);
+    }
+    .profile-card.add-profile {
+      border-style: dashed;
+      border-color: #8B5CF6;
+      background: linear-gradient(120deg, rgba(139,92,246,0.08) 0%, rgba(59,130,246,0.08) 100%);
+      cursor: pointer;
+      justify-content: center;
+    }
+
+    .profile-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-right: 14px;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(59,130,246,0.10);
+      flex-shrink: 0;
+    }
+    .profile-card.add-profile .profile-avatar {
+      background: linear-gradient(135deg, #fff 0%, #8B5CF6 100%);
+      color: #8B5CF6;
+      font-size: 26px;
+    }
+
+    .profile-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .profile-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .profile-desc {
+      font-size: 12px;
+      color: #c7d2fe;
+      opacity: 0.85;
+    }
+
+    .profile-action {
+      margin-left: 16px;
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      min-width: 64px;
+    }
+    .profile-action.primary {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #fff;
+      border: none;
+    }
+    .profile-action.secondary {
+      background: rgba(139,92,246,0.12);
+      color: #8B5CF6;
+      border: 1px solid #8B5CF6;
+    }
+    .profile-action.success {
+      background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+      color: #fff;
+      border: none;
+    }
+    .profile-card.add-profile .profile-action {
+      margin-left: 0;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -287,6 +481,54 @@
           <div class="stat-item">
             <div id="searchesPerformed" class="stat-value">0</div>
             <div class="stat-label">Searches</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Profiles Button -->
+    <button id="openProfilesModal" class="fab-profiles" title="Manage Profiles">
+      <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="8" fill="#8B5CF6"/>
+        <text x="10" y="15" text-anchor="middle" font-size="12" fill="white" font-family="Arial" font-weight="bold">👤</text>
+      </svg>
+    </button>
+
+    <!-- Profiles Modal -->
+    <div id="profilesModal" class="modal-overlay">
+      <div class="modal-window">
+        <div class="modal-header">
+          <span class="modal-title">Manage Profiles</span>
+          <button id="closeProfilesModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="profile-cards">
+            <!-- Example Profile Card -->
+            <div class="profile-card active">
+              <div class="profile-avatar">🧑‍💻</div>
+              <div class="profile-info">
+                <div class="profile-name">Tech Guru</div>
+                <div class="profile-desc">Tech-focused recommendations</div>
+              </div>
+              <button class="profile-action primary">Active</button>
+            </div>
+            <div class="profile-card">
+              <div class="profile-avatar">🎨</div>
+              <div class="profile-info">
+                <div class="profile-name">Art Explorer</div>
+                <div class="profile-desc">Art & creativity profile</div>
+              </div>
+              <button class="profile-action secondary">Switch</button>
+            </div>
+            <!-- Add Profile Card -->
+            <div class="profile-card add-profile">
+              <div class="profile-avatar">+</div>
+              <div class="profile-info">
+                <div class="profile-name">Add Profile</div>
+                <div class="profile-desc">Create a new profile</div>
+              </div>
+              <button class="profile-action success">Add</button>
+            </div>
           </div>
         </div>
       </div>

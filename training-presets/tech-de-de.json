@@ -1,0 +1,34 @@
+{
+  "name": "Tech Deutsch",
+  "description": "Deutsche Tech-Inhalte, Programmierung und Technologie",
+  "category": "tech",
+  "color": "#3B82F6",
+  "language": "de",
+  "region": "DE",
+  "searches": [
+    { "query": "KI Forschung Deutschland", "frequency": 4, "duration": 110, "language": "de", "region": "DE" },
+    { "query": "Programmieren lernen deutsch", "frequency": 5, "duration": 95, "language": "de", "region": "DE" },
+    { "query": "Tech News Deutschland", "frequency": 3, "duration": 85, "language": "de", "region": "DE" },
+    { "query": "Software Entwicklung Tutorial", "frequency": 3, "duration": 120, "language": "de", "region": "DE" },
+    { "query": "Digitalisierung Deutschland", "frequency": 2, "duration": 100, "language": "de", "region": "DE" }
+  ],
+  "watchPatterns": [
+    { "category": "tech", "watchTime": 0.88, "engagement": "like", "language": "de" },
+    { "category": "programming", "watchTime": 0.85, "engagement": "like", "language": "de" },
+    { "category": "education", "watchTime": 0.80, "engagement": "like", "language": "de" }
+  ],
+  "channelPreferences": [
+    { "channelId": "UC0GyQ7NjNqHZcDUzGjr-jQw", "channelName": "The Morpheus Tutorials", "action": "prioritize", "reason": "Excellent German programming tutorials" },
+    { "channelId": "UCVdfWajbXrH0-0j5P_DFqag", "channelName": "Programmieren Starten", "action": "subscribe", "reason": "Good beginner content" }
+  ],
+  "targetKeywords": ["KI", "Programmierung", "Software", "Technologie", "Deutschland", "Tutorial"],
+  "avoidKeywords": ["Drama", "Klatsch", "Clickbait"],
+  "trainingDuration": 50,
+  "advancedOptions": {
+    "clearHistoryFirst": true,
+    "useIncognito": false,
+    "simulateRealTiming": true,
+    "engagementRate": 0.6,
+    "skipAds": true
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "Scientific Method",
+  "description": "Research, experiments, and scientific discussions",
+  "category": "science",
+  "color": "#10B981",
+  "language": "en",
+  "region": "US",
+  "searches": [
+    { "query": "scientific method explained", "frequency": 4, "duration": 110, "language": "en", "region": "US" },
+    { "query": "physics experiments", "frequency": 3, "duration": 95, "language": "en", "region": "US" },
+    { "query": "research paper analysis", "frequency": 2, "duration": 140, "language": "en", "region": "US" },
+    { "query": "peer review process", "frequency": 2, "duration": 80, "language": "en", "region": "US" },
+    { "query": "Nobel Prize lectures", "frequency": 1, "duration": 180, "language": "en", "region": "US" },
+    { "query": "science communication", "frequency": 3, "duration": 90, "language": "en", "region": "US" }
+  ],
+  "watchPatterns": [
+    { "category": "science", "watchTime": 0.88, "engagement": "like", "language": "en" },
+    { "category": "research", "watchTime": 0.92, "engagement": "like", "language": "en" },
+    { "category": "education", "watchTime": 0.80, "engagement": "like", "language": "en" }
+  ],
+  "channelPreferences": [
+    { "channelId": "UC6nSFpj9HTCZ5t-N3Rm3-HA", "channelName": "Veritasium", "action": "prioritize", "reason": "High-quality science content" },
+    { "channelId": "UCsXVk37bltHxD1rDPwtNM8Q", "channelName": "Kurzgesagt", "action": "subscribe", "reason": "Great science animations" },
+    { "channelId": "pseudoscience123", "channelName": "Conspiracy Science", "action": "block", "reason": "Spreads misinformation" }
+  ],
+  "targetKeywords": ["science", "research", "experiment", "study", "analysis", "method", "evidence"],
+  "avoidKeywords": ["pseudoscience", "conspiracy", "unproven", "miracle cure"],
+  "trainingDuration": 45,
+  "advancedOptions": {
+    "clearHistoryFirst": false,
+    "useIncognito": false,
+    "simulateRealTiming": true,
+    "engagementRate": 0.8,
+    "skipAds": false
+  }
+}

@@ -177,23 +177,54 @@ class PopupManager {
         this.showNotification('Please navigate to YouTube first', 'error');
         return;
       }
-      
-      // Create a quick training preset
-      const quickPreset = {
-        id: 'quick-start',
-        name: 'Quick Start',
-        description: 'Quick training profile',
-        category: 'tech',
-        language: 'en',
-        region: 'US',
-        searches: [
+
+      // Load active profile from storage, fallback to default
+      const storage = await chrome.storage.local.get(['profiles', 'activeProfileId']);
+      let profiles = storage.profiles || [
+        {
+          id: 'quick-start',
+          name: 'Quick Start',
+          desc: 'Quick training profile',
+          avatar: '⚡',
+          // Default training config
+          category: 'tech',
+          language: 'en',
+          region: 'US',
+          searches: [
+            { query: 'programming tutorial', frequency: 2, duration: 60 },
+            { query: 'tech news', frequency: 2, duration: 45 }
+          ],
+          targetKeywords: ['programming', 'tech', 'tutorial'],
+          avoidKeywords: ['drama', 'gossip'],
+          trainingDuration: 10,
+          advancedOptions: {
+            clearHistoryFirst: false,
+            useIncognito: false,
+            simulateRealTiming: true,
+            engagementRate: 0.3,
+            skipAds: true
+          }
+        }
+      ];
+      let activeId = storage.activeProfileId || profiles[0].id;
+      let activeProfile = profiles.find(p => p.id === activeId) || profiles[0];
+
+      // If the profile doesn't have training config, fallback to default config
+      const preset = {
+        id: activeProfile.id,
+        name: activeProfile.name,
+        description: activeProfile.desc || activeProfile.description || '',
+        category: activeProfile.category || 'tech',
+        language: activeProfile.language || 'en',
+        region: activeProfile.region || 'US',
+        searches: activeProfile.searches || [
           { query: 'programming tutorial', frequency: 2, duration: 60 },
           { query: 'tech news', frequency: 2, duration: 45 }
         ],
-        targetKeywords: ['programming', 'tech', 'tutorial'],
-        avoidKeywords: ['drama', 'gossip'],
-        trainingDuration: 10,
-        advancedOptions: {
+        targetKeywords: activeProfile.targetKeywords || ['programming', 'tech', 'tutorial'],
+        avoidKeywords: activeProfile.avoidKeywords || ['drama', 'gossip'],
+        trainingDuration: activeProfile.trainingDuration || 10,
+        advancedOptions: activeProfile.advancedOptions || {
           clearHistoryFirst: false,
           useIncognito: false,
           simulateRealTiming: true,
@@ -201,15 +232,15 @@ class PopupManager {
           skipAds: true
         }
       };
-      
+
       // Start training
       await chrome.runtime.sendMessage({
         type: 'START_TRAINING',
-        preset: quickPreset
+        preset
       });
       
-      this.updateTrainingStatus(true, 'Quick Start');
-      this.showNotification('Quick training started!', 'success');
+      this.updateTrainingStatus(true, preset.name);
+      this.showNotification(`Training started with "${preset.name}"!`, 'success');
       
     } catch (error) {
       console.error('Error starting quick training:', error);
@@ -243,7 +274,7 @@ class PopupManager {
 
   openHelp() {
     chrome.tabs.create({ 
-      url: 'https://github.com/your-repo/youtube-algorithm-trainer#readme' 
+      url: 'https://github.com/fr4iser90/YouTube-Algorithm-Manager#readme' 
     });
     window.close();
   }
@@ -262,9 +293,224 @@ class PopupManager {
   }
 }
 
+/* --- Profile Modal Logic --- */
+function setupProfilesModal() {
+  const openBtn = document.getElementById('openProfilesModal');
+  const modal = document.getElementById('profilesModal');
+  const closeBtn = document.getElementById('closeProfilesModal');
+  const cardsContainer = modal?.querySelector('.profile-cards');
+
+  if (!openBtn || !modal || !closeBtn || !cardsContainer) return;
+
+  // Load manifest and all profiles from local server, GitHub, or static assets
+  async function loadProfiles() {
+    const LOCAL_BASE = 'http://localhost:3000/';
+    const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/';
+    let manifest = null;
+    let profiles = null;
+    let source = 'static';
+
+    // Try local server first
+    try {
+      const manifestRes = await fetch(LOCAL_BASE + 'profiles/manifest.json', { cache: "no-store" });
+      if (!manifestRes.ok) throw new Error('Local manifest fetch failed');
+      manifest = await manifestRes.json();
+      const profilePromises = manifest.map(async meta => {
+        const res = await fetch(LOCAL_BASE + meta.path, { cache: "no-store" });
+        const data = await res.json();
+        return { ...meta, ...data };
+      });
+      profiles = await Promise.all(profilePromises);
+      source = 'local';
+    } catch (e) {
+      // Try GitHub next
+      try {
+        const manifestRes = await fetch(GITHUB_RAW_BASE + 'profiles/manifest.json', { cache: "no-store" });
+        if (!manifestRes.ok) throw new Error('GitHub manifest fetch failed');
+        manifest = await manifestRes.json();
+        const profilePromises = manifest.map(async meta => {
+          const res = await fetch(GITHUB_RAW_BASE + meta.path, { cache: "no-store" });
+          const data = await res.json();
+          return { ...meta, ...data };
+        });
+        profiles = await Promise.all(profilePromises);
+        source = 'github';
+      } catch (e2) {
+        // fallback to static assets
+        try {
+          const manifestRes = await fetch(chrome.runtime.getURL('profiles/manifest.json'));
+          manifest = await manifestRes.json();
+          const profilePromises = manifest.map(async meta => {
+            const res = await fetch(chrome.runtime.getURL(meta.path));
+            const data = await res.json();
+            return { ...meta, ...data };
+          });
+          profiles = await Promise.all(profilePromises);
+          source = 'static';
+        } catch (e3) {
+          // fallback to default demo profiles if all fail
+          profiles = [
+            {
+              id: 'tech-guru',
+              name: 'Tech Guru',
+              desc: 'Tech-focused recommendations',
+              avatar: '🧑‍💻',
+              category: 'tech'
+            },
+            {
+              id: 'art-explorer',
+              name: 'Art Explorer',
+              desc: 'Art & creativity profile',
+              avatar: '🎨',
+              category: 'art'
+            }
+          ];
+        }
+      }
+    }
+
+    // Get active profile from storage
+    const storage = await chrome.storage.local.get(['activeProfileId']);
+    let activeId = storage.activeProfileId || profiles[0]?.id;
+
+    // Get unique categories
+    const categories = [...new Set(profiles.map(p => p.category))];
+
+    renderProfiles(profiles, activeId, categories);
+  }
+
+  // Render profile cards with category filter
+  function renderProfiles(profiles, activeId, categories) {
+    cardsContainer.innerHTML = '';
+
+    // Category filter UI
+    const filterBar = document.createElement('div');
+    filterBar.style.display = 'flex';
+    filterBar.style.gap = '8px';
+    filterBar.style.marginBottom = '12px';
+
+    let selectedCategory = categories[0];
+    categories.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+      btn.className = 'profile-action' + (cat === selectedCategory ? ' primary' : ' secondary');
+      btn.style.fontSize = '12px';
+      btn.addEventListener('click', () => {
+        selectedCategory = cat;
+        renderProfiles(profiles, activeId, categories);
+      });
+      filterBar.appendChild(btn);
+    });
+    cardsContainer.appendChild(filterBar);
+
+    // Filter profiles by selected category
+    const filtered = profiles.filter(p => p.category === selectedCategory);
+
+    filtered.forEach(profile => {
+      const card = document.createElement('div');
+      card.className = 'profile-card' + (profile.id === activeId ? ' active' : '');
+
+      // Profile type label
+      const typeLabel = profile.mode === 'learning'
+        ? `<span class="profile-type learning">Learning</span>`
+        : `<span class="profile-type template">Template</span>`;
+
+      // Freeze toggle for learning profiles
+      let freezeToggle = '';
+      if (profile.mode === 'learning') {
+        const checked = profile.isFrozen ? 'checked' : '';
+        freezeToggle = `
+          <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;">
+            <input type="checkbox" class="freeze-toggle" ${checked} style="accent-color:#8B5CF6;">
+            Freeze ❄️
+          </label>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="profile-avatar">${profile.avatar || '👤'}</div>
+        <div class="profile-info">
+          <div class="profile-name">${profile.name} ${typeLabel}</div>
+          <div class="profile-desc">${profile.desc}</div>
+          ${freezeToggle}
+        </div>
+        <button class="profile-action ${profile.id === activeId ? 'primary' : 'secondary'}">
+          ${profile.id === activeId ? 'Active' : 'Switch'}
+        </button>
+      `;
+
+      // Switch profile handler
+      if (profile.id !== activeId) {
+        card.querySelector('.profile-action').addEventListener('click', async () => {
+          await chrome.storage.local.set({ activeProfileId: profile.id });
+          renderProfiles(profiles, profile.id, categories);
+        });
+      }
+
+      // Freeze toggle handler
+      if (profile.mode === 'learning' && profile.id === activeId) {
+        const freezeInput = card.querySelector('.freeze-toggle');
+        if (freezeInput) {
+          freezeInput.addEventListener('change', async (e) => {
+            // Update isFrozen in local storage for this profile
+            const storage = await chrome.storage.local.get(['userProfiles']);
+            let userProfiles = storage.userProfiles || [];
+            userProfiles = userProfiles.map(p =>
+              p.id === profile.id ? { ...p, isFrozen: e.target.checked } : p
+            );
+            await chrome.storage.local.set({ userProfiles });
+            // Also update in-memory for immediate UI feedback
+            profile.isFrozen = e.target.checked;
+            renderProfiles(profiles, activeId, categories);
+          });
+        }
+      }
+
+      cardsContainer.appendChild(card);
+    });
+
+    // Add Profile Card (optional: only for demo, not from manifest)
+    const addCard = document.createElement('div');
+    addCard.className = 'profile-card add-profile';
+    addCard.innerHTML = `
+      <div class="profile-avatar">+</div>
+      <div class="profile-info">
+        <div class="profile-name">Add Profile</div>
+        <div class="profile-desc">Create a new profile</div>
+      </div>
+      <button class="profile-action success">Add</button>
+    `;
+    addCard.querySelector('.profile-action').addEventListener('click', () => {
+      // For now, just show a notification (since profiles are static assets)
+      alert('Adding new profiles via UI is not supported in this demo. Add JSON files to profiles/ and update manifest.json.');
+    });
+    cardsContainer.appendChild(addCard);
+  }
+
+  openBtn.addEventListener('click', () => {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    loadProfiles();
+  });
+
+  closeBtn.addEventListener('click', () => {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  });
+
+  // Optional: close modal when clicking outside modal window
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
+}
+
 // Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   new PopupManager();
+  setupProfilesModal();
 });
 
 // Listen for messages from background script

@@ -12,7 +12,7 @@ import { AnonymousMode } from './components/AnonymousMode';
 import { MLAnalytics } from './components/MLAnalytics';
 import { ExtensionBridge } from './components/ExtensionBridge';
 import { useLocalStorage, dateReviver } from './hooks/useLocalStorage';
-import { presetTemplates } from './data/presetTemplates';
+/* Dynamically load presets from GitHub manifest */
 import { BubblePreset, TrainingProfile, AlgorithmState } from './types';
 import { Plus, Filter, Search, Settings as SettingsIcon, Brain, Shield, Chrome } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -33,15 +33,30 @@ function App() {
   const [activeProfileId, setactiveProfileId] = useState<string | null>(null);
   const [extensionTrainingActive, setExtensionTrainingActive] = useState(false);
 
-  // Initialize with template presets if none exist
+  // Initialize with template presets from GitHub if none exist
   useEffect(() => {
     if (presets.length === 0) {
-      const initialPresets = presetTemplates.map(template => ({
-        ...template,
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        createdAt: new Date()
-      }));
-      setPresets(initialPresets);
+      const fetchPresets = async () => {
+        try {
+          const manifestUrl = 'https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/training-presets/manifest.json';
+          const manifestRes = await fetch(manifestUrl, { cache: "no-store" });
+          const manifest = await manifestRes.json();
+          const presetPromises = manifest.map(async (meta: any) => {
+            const presetRes = await fetch('https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/' + meta.path, { cache: "no-store" });
+            const preset = await presetRes.json();
+            return {
+              ...preset,
+              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+              createdAt: new Date()
+            };
+          });
+          const initialPresets = await Promise.all(presetPromises);
+          setPresets(initialPresets);
+        } catch (e) {
+          console.error('Failed to fetch presets from GitHub:', e);
+        }
+      };
+      fetchPresets();
     }
   }, [presets.length, setPresets]);
 

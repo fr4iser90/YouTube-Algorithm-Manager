@@ -1,0 +1,44 @@
+[
+  {
+    "id": "tech-deep-dive-en",
+    "name": "Tech Deep Dive (English)",
+    "desc": "AI research, programming, and cutting-edge technology in English",
+    "path": "training-presets/profiles/tech-deep-dive-en.json"
+  },
+  {
+    "id": "tech-de-de",
+    "name": "Tech Deutsch",
+    "desc": "Deutsche Tech-Inhalte, Programmierung und Technologie",
+    "path": "training-presets/profiles/tech-de-de.json"
+  },
+  {
+    "id": "scientific-method-en",
+    "name": "Scientific Method",
+    "desc": "Research, experiments, and scientific discussions",
+    "path": "training-presets/profiles/scientific-method-en.json"
+  },
+  {
+    "id": "politica-es",
+    "name": "Política Española",
+    "desc": "Análisis político, noticias y debates en español",
+    "path": "training-presets/profiles/politica-es.json"
+  },
+  {
+    "id": "creative-arts-en",
+    "name": "Creative Arts",
+    "desc": "Music production, visual arts, and creative processes",
+    "path": "training-presets/profiles/creative-arts-en.json"
+  },
+  {
+    "id": "minimalist-living-en",
+    "name": "Minimalist Living",
+    "desc": "Simple living, productivity, and intentional lifestyle",
+    "path": "training-presets/profiles/minimalist-living-en.json"
+  },
+  {
+    "id": "japan-tech-ja",
+    "name": "日本のテクノロジー",
+    "desc": "Japanese technology, innovation, and digital culture",
+    "path": "training-presets/profiles/japan-tech-ja.json"
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "name": "Creative Arts",
+  "description": "Music production, visual arts, and creative processes",
+  "category": "music",
+  "color": "#8B5CF6",
+  "language": "en",
+  "region": "US",
+  "searches": [
+    { "query": "music production tips", "frequency": 5, "duration": 85, "language": "en", "region": "US" },
+    { "query": "digital art tutorial", "frequency": 4, "duration": 75, "language": "en", "region": "US" },
+    { "query": "creative process", "frequency": 3, "duration": 95, "language": "en", "region": "US" },
+    { "query": "artist interviews", "frequency": 2, "duration": 110, "language": "en", "region": "US" },
+    { "query": "music theory explained", "frequency": 3, "duration": 100, "language": "en", "region": "US" },
+    { "query": "art critique analysis", "frequency": 2, "duration": 120, "language": "en", "region": "US" }
+  ],
+  "watchPatterns": [
+    { "category": "music", "watchTime": 0.90, "engagement": "like", "language": "en" },
+    { "category": "art", "watchTime": 0.85, "engagement": "like", "language": "en" },
+    { "category": "creative", "watchTime": 0.88, "engagement": "like", "language": "en" }
+  ],
+  "channelPreferences": [
+    { "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ", "channelName": "Music Theory Guy", "action": "prioritize", "reason": "Excellent music education" },
+    { "channelId": "art_drama_channel", "channelName": "Art Drama Central", "action": "avoid", "reason": "Too much drama, not enough art" }
+  ],
+  "targetKeywords": ["music", "art", "creative", "design", "production", "artist", "theory"],
+  "avoidKeywords": ["drama", "beef", "controversy", "gossip"],
+  "trainingDuration": 40,
+  "advancedOptions": {
+    "clearHistoryFirst": false,
+    "useIncognito": false,
+    "simulateRealTiming": true,
+    "engagementRate": 0.9,
+    "skipAds": false
+  }
+}

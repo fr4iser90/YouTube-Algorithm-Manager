@@ -1,0 +1,18 @@
+[
+  {
+    "id": "tech-programming",
+    "name": "Programming Enthusiast",
+    "desc": "Focuses on programming tutorials and tech news.",
+    "avatar": "💻",
+    "category": "tech",
+    "path": "profiles/tech/programming.json"
+  },
+  {
+    "id": "art-painting",
+    "name": "Art Lover",
+    "desc": "Focuses on painting tutorials and art history.",
+    "avatar": "🎨",
+    "category": "art",
+    "path": "profiles/art/painting.json"
+  }
+]

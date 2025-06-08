@@ -1,0 +1,33 @@
+{
+  "name": "日本のテクノロジー",
+  "description": "Japanese technology, innovation, and digital culture",
+  "category": "tech",
+  "color": "#EC4899",
+  "language": "ja",
+  "region": "JP",
+  "searches": [
+    { "query": "日本 テクノロジー", "frequency": 4, "duration": 100, "language": "ja", "region": "JP" },
+    { "query": "プログラミング 日本語", "frequency": 3, "duration": 90, "language": "ja", "region": "JP" },
+    { "query": "AI 人工知能 日本", "frequency": 3, "duration": 110, "language": "ja", "region": "JP" },
+    { "query": "ゲーム開発", "frequency": 4, "duration": 85, "language": "ja", "region": "JP" },
+    { "query": "ロボット技術", "frequency": 2, "duration": 120, "language": "ja", "region": "JP" }
+  ],
+  "watchPatterns": [
+    { "category": "tech", "watchTime": 0.85, "engagement": "like", "language": "ja" },
+    { "category": "gaming", "watchTime": 0.90, "engagement": "like", "language": "ja" },
+    { "category": "robotics", "watchTime": 0.88, "engagement": "like", "language": "ja" }
+  ],
+  "channelPreferences": [
+    { "channelId": "japanese_tech_channel", "channelName": "テックチャンネル", "action": "prioritize", "reason": "Quality Japanese tech content" }
+  ],
+  "targetKeywords": ["テクノロジー", "プログラミング", "AI", "ゲーム", "ロボット", "日本"],
+  "avoidKeywords": ["ドラマ", "ゴシップ"],
+  "trainingDuration": 45,
+  "advancedOptions": {
+    "clearHistoryFirst": true,
+    "useIncognito": false,
+    "simulateRealTiming": true,
+    "engagementRate": 0.7,
+    "skipAds": true
+  }
+}

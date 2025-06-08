@@ -1,0 +1,23 @@
+{
+  "id": "tech-programming",
+  "name": "Programming Enthusiast",
+  "desc": "Focuses on programming tutorials and tech news.",
+  "avatar": "💻",
+  "category": "tech",
+  "language": "en",
+  "region": "US",
+  "searches": [
+    { "query": "javascript tutorial", "frequency": 2, "duration": 60 },
+    { "query": "latest tech news", "frequency": 2, "duration": 45 }
+  ],
+  "targetKeywords": ["javascript", "programming", "tech"],
+  "avoidKeywords": ["drama", "gossip"],
+  "trainingDuration": 10,
+  "advancedOptions": {
+    "clearHistoryFirst": false,
+    "useIncognito": false,
+    "simulateRealTiming": true,
+    "engagementRate": 0.3,
+    "skipAds": true
+  }
+}
