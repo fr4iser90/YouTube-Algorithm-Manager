@@ -486,47 +486,36 @@
       </div>
     </div>
 
-    <!-- Floating Profiles Button -->
-    <button id="openProfilesModal" class="fab-profiles" title="Manage Profiles">
-      <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
-        <circle cx="10" cy="10" r="8" fill="#8B5CF6"/>
-        <text x="10" y="15" text-anchor="middle" font-size="12" fill="white" font-family="Arial" font-weight="bold">👤</text>
-      </svg>
-    </button>
-
-    <!-- Profiles Modal -->
-    <div id="profilesModal" class="modal-overlay">
-      <div class="modal-window">
-        <div class="modal-header">
-          <span class="modal-title">Manage Profiles</span>
-          <button id="closeProfilesModal" class="modal-close">&times;</button>
-        </div>
-        <div class="modal-content">
-          <div class="profile-cards"></div>
-        </div>
+    <!-- Profiles Dropdown & Controls -->
+    <div class="profile-switcher" style="margin-bottom: 18px;">
+      <label for="profileDropdown" style="font-weight:600;font-size:14px;display:block;margin-bottom:4px;">Profile:</label>
+      <select id="profileDropdown" style="width:100%;padding:8px;border-radius:8px;margin-bottom:6px;"></select>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <button id="activateProfileBtn" class="button primary" style="flex:1;">Activate</button>
+        <label style="font-size:12px;display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" id="anonymCheckbox" />
+          Anonym
+        </label>
+        <label style="font-size:12px;display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" id="freezeCheckbox" />
+          Freeze
+        </label>
       </div>
     </div>
 
-    <!-- Training Presets Modal -->
-    <div id="trainingModal" class="modal-overlay">
-      <div class="modal-window">
-        <div class="modal-header">
-          <span class="modal-title">Training Presets</span>
-          <button id="closeTrainingModal" class="modal-close">&times;</button>
-        </div>
-        <div class="modal-content">
-          <div class="training-cards"></div>
-        </div>
+    <!-- Training Presets Dropdown & Controls -->
+    <div class="training-switcher" style="margin-bottom: 18px;">
+      <label for="trainingDropdown" style="font-weight:600;font-size:14px;display:block;margin-bottom:4px;">Training Preset:</label>
+      <select id="trainingDropdown" style="width:100%;padding:8px;border-radius:8px;margin-bottom:6px;"></select>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button id="startTrainingBtn" class="button success" style="flex:1;">Start Training</button>
+        <button id="editPresetBtn" class="button secondary" style="font-size:13px;">Edit</button>
+        <button id="createPresetBtn" class="button secondary" style="font-size:13px;">Create</button>
       </div>
     </div>
 
-    <!-- Floating Training Button -->
-    <button id="openTrainingModal" class="fab-training" title="Manage Training Presets" style="position: fixed; bottom: 140px; right: 30px; width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%); color: white; border: none; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: center; z-index: 100; cursor: pointer; transition: box-shadow 0.2s, transform 0.2s;">
-      <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
-        <circle cx="10" cy="10" r="8" fill="#F59E0B"/>
-        <text x="10" y="15" text-anchor="middle" font-size="12" fill="white" font-family="Arial" font-weight="bold">🎯</text>
-      </svg>
-    </button>
+    
+    <!-- Removed: Floating Profiles Button, Profiles Modal, Training Presets Modal, Floating Training Button -->
     
     <!-- Action Buttons -->
     <div class="actions">

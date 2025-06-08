@@ -179,59 +179,38 @@ class PopupManager {
         return;
       }
 
-      // Load active profile from storage, fallback to default
+      // Load active profile from storage, NO fallback to default
       const storage = await chrome.storage.local.get(['profiles', 'activeProfileId']);
-      let profiles = storage.profiles || [
-        {
-          id: 'quick-start',
-          name: 'Quick Start',
-          desc: 'Quick training profile',
-          avatar: '⚡',
-          // Default training config
-          category: 'tech',
-          language: 'en',
-          region: 'US',
-          searches: [
-            { query: 'programming tutorial', frequency: 2, duration: 60 },
-            { query: 'tech news', frequency: 2, duration: 45 }
-          ],
-          targetKeywords: ['programming', 'tech', 'tutorial'],
-          avoidKeywords: ['drama', 'gossip'],
-          trainingDuration: 10,
-          advancedOptions: {
-            clearHistoryFirst: false,
-            useIncognito: false,
-            simulateRealTiming: true,
-            engagementRate: 0.3,
-            skipAds: true
-          }
-        }
-      ];
+      let profiles = storage.profiles || [];
+      if (!profiles.length) {
+        this.showNotification('No profiles found. Please select or create a profile first.', 'error');
+        return;
+      }
       let activeId = storage.activeProfileId || profiles[0].id;
-      let activeProfile = profiles.find(p => p.id === activeId) || profiles[0];
+      let activeProfile = profiles.find(p => p.id === activeId);
+      if (!activeProfile) {
+        this.showNotification('No active profile selected. Please select a profile first.', 'error');
+        return;
+      }
 
-      // If the profile doesn't have training config, fallback to default config
+      // Require training config
+      if (!activeProfile.searches || !activeProfile.trainingDuration) {
+        this.showNotification('Active profile does not have training configuration.', 'error');
+        return;
+      }
+
       const preset = {
         id: activeProfile.id,
         name: activeProfile.name,
         description: activeProfile.desc || activeProfile.description || '',
-        category: activeProfile.category || 'tech',
-        language: activeProfile.language || 'en',
-        region: activeProfile.region || 'US',
-        searches: activeProfile.searches || [
-          { query: 'programming tutorial', frequency: 2, duration: 60 },
-          { query: 'tech news', frequency: 2, duration: 45 }
-        ],
-        targetKeywords: activeProfile.targetKeywords || ['programming', 'tech', 'tutorial'],
-        avoidKeywords: activeProfile.avoidKeywords || ['drama', 'gossip'],
-        trainingDuration: activeProfile.trainingDuration || 10,
-        advancedOptions: activeProfile.advancedOptions || {
-          clearHistoryFirst: false,
-          useIncognito: false,
-          simulateRealTiming: true,
-          engagementRate: 0.3,
-          skipAds: true
-        }
+        category: activeProfile.category,
+        language: activeProfile.language,
+        region: activeProfile.region,
+        searches: activeProfile.searches,
+        targetKeywords: activeProfile.targetKeywords,
+        avoidKeywords: activeProfile.avoidKeywords,
+        trainingDuration: activeProfile.trainingDuration,
+        advancedOptions: activeProfile.advancedOptions
       };
 
       // Start training
@@ -294,291 +273,199 @@ class PopupManager {
   }
 }
 
-/* --- Profile Modal Logic --- */
-function setupProfilesModal() {
-  const openBtn = document.getElementById('openProfilesModal');
-  const modal = document.getElementById('profilesModal');
-  const closeBtn = document.getElementById('closeProfilesModal');
-  const cardsContainer = modal?.querySelector('.profile-cards');
+/* --- Profiles Dropdown & Controls Logic --- */
+function setupProfileSwitcher() {
+  const dropdown = document.getElementById('profileDropdown');
+  const activateBtn = document.getElementById('activateProfileBtn');
+  const anonymCheckbox = document.getElementById('anonymCheckbox');
+  const freezeCheckbox = document.getElementById('freezeCheckbox');
 
-  if (!openBtn || !modal || !closeBtn || !cardsContainer) return;
+  if (!dropdown || !activateBtn || !anonymCheckbox || !freezeCheckbox) return;
 
-  // Load manifest and all profiles from local server, GitHub, or static assets
-  async function loadProfiles() {
-    const LOCAL_BASE = 'http://localhost:3000/';
-    const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/';
-    let manifest = null;
-    let profiles = null;
-    let source = 'static';
-
-    // Try local server first
-    try {
-      const manifestRes = await fetch(LOCAL_BASE + 'profiles/manifest.json', { cache: "no-store" });
-      if (!manifestRes.ok) throw new Error('Local manifest fetch failed');
-      manifest = await manifestRes.json();
-      const profilePromises = manifest.map(async meta => {
-        const res = await fetch(LOCAL_BASE + meta.path, { cache: "no-store" });
-        const data = await res.json();
-        return { ...meta, ...data };
-      });
-      profiles = await Promise.all(profilePromises);
-      source = 'local';
-    } catch (e) {
-      // Try GitHub next
-      try {
-        const manifestRes = await fetch(GITHUB_RAW_BASE + 'profiles/manifest.json', { cache: "no-store" });
-        if (!manifestRes.ok) throw new Error('GitHub manifest fetch failed');
-        manifest = await manifestRes.json();
-        const profilePromises = manifest.map(async meta => {
-          const res = await fetch(GITHUB_RAW_BASE + meta.path, { cache: "no-store" });
-          const data = await res.json();
-          return { ...meta, ...data };
-        });
-        profiles = await Promise.all(profilePromises);
-        source = 'github';
-      } catch (e2) {
-        // fallback to static assets
-        try {
-          const manifestRes = await fetch(chrome.runtime.getURL('profiles/manifest.json'));
-          manifest = await manifestRes.json();
-          const profilePromises = manifest.map(async meta => {
-            const res = await fetch(chrome.runtime.getURL(meta.path));
-            const data = await res.json();
-            return { ...meta, ...data };
-          });
-          profiles = await Promise.all(profilePromises);
-          source = 'static';
-        } catch (e3) {
-          // fallback to default demo profiles if all fail
-          profiles = [
-            {
-              id: 'tech-guru',
-              name: 'Tech Guru',
-              desc: 'Tech-focused recommendations',
-              avatar: '🧑‍💻',
-              category: 'tech'
-            },
-            {
-              id: 'art-explorer',
-              name: 'Art Explorer',
-              desc: 'Art & creativity profile',
-              avatar: '🎨',
-              category: 'art'
-            }
-          ];
-        }
-      }
+  // Load profiles from GitHub and local storage
+  async function loadProfilesDropdown() {
+    // Fetch GitHub profiles
+    let githubProfiles = [];
+    const manifestUrl = 'https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/profiles/manifest.json';
+    const manifestRes = await fetch(manifestUrl, { cache: "no-store" });
+    if (!manifestRes.ok) {
+      dropdown.innerHTML = '<option disabled selected>Failed to load profiles from GitHub</option>';
+      dropdown.dataset.profiles = '[]';
+      return;
     }
+    const manifest = await manifestRes.json();
+    const profilePromises = manifest.map(async (meta) => {
+      const res = await fetch('https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/' + meta.path, { cache: "no-store" });
+      if (!res.ok) return null;
+      const profile = await res.json();
+      return { ...meta, ...profile, source: 'github' };
+    });
+    githubProfiles = (await Promise.all(profilePromises)).filter(Boolean);
 
-    // Get active profile from storage
-    const storage = await chrome.storage.local.get(['activeProfileId']);
-    let activeId = storage.activeProfileId || profiles[0]?.id;
+    // Load local profiles
+    let localProfiles = [];
+    const storage = await chrome.storage.local.get(['userProfiles']);
+    localProfiles = (storage.userProfiles || []).map(p => ({ ...p, source: 'local' }));
 
-    // Get unique categories
-    const categories = [...new Set(profiles.map(p => p.category))];
-
-    renderProfiles(profiles, activeId, categories);
+    // Merge and populate dropdown
+    const allProfiles = [...githubProfiles, ...localProfiles];
+    dropdown.innerHTML = '';
+    if (allProfiles.length === 0) {
+      dropdown.innerHTML = '<option disabled selected>No profiles found</option>';
+    } else {
+      allProfiles.forEach((profile, idx) => {
+        const opt = document.createElement('option');
+        opt.value = profile.id || profile.name || idx;
+        opt.textContent = `[${profile.source === 'github' ? 'GH' : 'Local'}] ${profile.name}`;
+        dropdown.appendChild(opt);
+      });
+    }
+    dropdown.dataset.profiles = JSON.stringify(allProfiles);
   }
 
-  // Render profile cards with category filter
-  function renderProfiles(profiles, activeId, categories) {
-    cardsContainer.innerHTML = '';
+  // On Activate: handle freeze/anonym logic
+  activateBtn.addEventListener('click', async () => {
+    const allProfiles = JSON.parse(dropdown.dataset.profiles || '[]');
+    const selectedIdx = dropdown.selectedIndex;
+    const selectedProfile = allProfiles[selectedIdx];
+    if (!selectedProfile) return;
 
-    // Category filter UI
-    const filterBar = document.createElement('div');
-    filterBar.style.display = 'flex';
-    filterBar.style.gap = '8px';
-    filterBar.style.marginBottom = '12px';
-
-    let selectedCategory = categories[0];
-    categories.forEach(cat => {
-      const btn = document.createElement('button');
-      btn.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-      btn.className = 'profile-action' + (cat === selectedCategory ? ' primary' : ' secondary');
-      btn.style.fontSize = '12px';
-      btn.addEventListener('click', () => {
-        selectedCategory = cat;
-        renderProfiles(profiles, activeId, categories);
-      });
-      filterBar.appendChild(btn);
-    });
-    cardsContainer.appendChild(filterBar);
-
-    // Filter profiles by selected category
-    const filtered = profiles.filter(p => p.category === selectedCategory);
-
-    filtered.forEach(profile => {
-      const card = document.createElement('div');
-      card.className = 'profile-card' + (profile.id === activeId ? ' active' : '');
-
-      // Profile type label
-      const typeLabel = profile.mode === 'learning'
-        ? `<span class="profile-type learning">Learning</span>`
-        : `<span class="profile-type template">Template</span>`;
-
-      // Freeze toggle for learning profiles
-      let freezeToggle = '';
-      if (profile.mode === 'learning') {
-        const checked = profile.isFrozen ? 'checked' : '';
-        freezeToggle = `
-          <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;">
-            <input type="checkbox" class="freeze-toggle" ${checked} style="accent-color:#8B5CF6;">
-            Freeze ❄️
-          </label>
-        `;
-      }
-
-      card.innerHTML = `
-        <div class="profile-avatar">${profile.avatar || '👤'}</div>
-        <div class="profile-info">
-          <div class="profile-name">${profile.name} ${typeLabel}</div>
-          <div class="profile-desc">${profile.desc}</div>
-          ${freezeToggle}
-        </div>
-        <button class="profile-action ${profile.id === activeId ? 'primary' : 'secondary'}">
-          ${profile.id === activeId ? 'Active' : 'Switch'}
-        </button>
-      `;
-
-      // Switch profile handler
-      if (profile.id !== activeId) {
-        card.querySelector('.profile-action').addEventListener('click', async () => {
-          await chrome.storage.local.set({ activeProfileId: profile.id });
-          renderProfiles(profiles, profile.id, categories);
-        });
-      }
-
-      // Freeze toggle handler
-      if (profile.mode === 'learning' && profile.id === activeId) {
-        const freezeInput = card.querySelector('.freeze-toggle');
-        if (freezeInput) {
-          freezeInput.addEventListener('change', async (e) => {
-            // Update isFrozen in local storage for this profile
-            const storage = await chrome.storage.local.get(['userProfiles']);
-            let userProfiles = storage.userProfiles || [];
-            userProfiles = userProfiles.map(p =>
-              p.id === profile.id ? { ...p, isFrozen: e.target.checked } : p
-            );
-            await chrome.storage.local.set({ userProfiles });
-            // Also update in-memory for immediate UI feedback
-            profile.isFrozen = e.target.checked;
-            renderProfiles(profiles, activeId, categories);
-          });
-        }
-      }
-
-      cardsContainer.appendChild(card);
-    });
-
-    // Add Profile Card (optional: only for demo, not from manifest)
-    const addCard = document.createElement('div');
-    addCard.className = 'profile-card add-profile';
-    addCard.innerHTML = `
-      <div class="profile-avatar">+</div>
-      <div class="profile-info">
-        <div class="profile-name">Add Profile</div>
-        <div class="profile-desc">Create a new profile</div>
-      </div>
-      <button class="profile-action success">Add</button>
-    `;
-    addCard.querySelector('.profile-action').addEventListener('click', () => {
-      // For now, just show a notification (since profiles are static assets)
-      alert('Adding new profiles via UI is not supported in this demo. Add JSON files to profiles/ and update manifest.json.');
-    });
-    cardsContainer.appendChild(addCard);
-  }
-
-  openBtn.addEventListener('click', () => {
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    loadProfiles();
-  });
-
-  closeBtn.addEventListener('click', () => {
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-  });
-
-  // Optional: close modal when clicking outside modal window
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
+    // If GitHub profile and not frozen, clone to local
+    if (selectedProfile.source === 'github' && !freezeCheckbox.checked) {
+      // Clone to local and activate
+      const storage = await chrome.storage.local.get(['userProfiles']);
+      let userProfiles = storage.userProfiles || [];
+      const newProfile = { ...selectedProfile, id: 'local-' + Date.now(), source: 'local', isFrozen: false };
+      userProfiles.push(newProfile);
+      await chrome.storage.local.set({ userProfiles });
+      // Optionally, set as active
+      await chrome.storage.local.set({ activeProfileId: newProfile.id });
+      alert('Profile cloned to local and activated for growth.');
+    } else {
+      // Set as active (frozen or local)
+      await chrome.storage.local.set({ activeProfileId: selectedProfile.id, isFrozen: freezeCheckbox.checked });
+      alert('Profile activated' + (freezeCheckbox.checked ? ' (frozen)' : ''));
     }
+    // Optionally, handle anonym logic (not implemented here)
   });
+
+  // Reload profiles on open
+  loadProfilesDropdown();
 }
 
-/* --- Training Presets Modal Logic --- */
-function setupTrainingModal() {
-  const openBtn = document.getElementById('openTrainingModal');
-  const modal = document.getElementById('trainingModal');
-  const closeBtn = document.getElementById('closeTrainingModal');
-  const cardsContainer = modal?.querySelector('.training-cards');
+/* --- Training Presets Dropdown & Controls Logic --- */
+function setupTrainingSwitcher() {
+  const dropdown = document.getElementById('trainingDropdown');
+  const startBtn = document.getElementById('startTrainingBtn');
+  const editBtn = document.getElementById('editPresetBtn');
+  const createBtn = document.getElementById('createPresetBtn');
 
-  if (!openBtn || !modal || !closeBtn || !cardsContainer) return;
+  if (!dropdown || !startBtn || !editBtn || !createBtn) return;
 
-  // Fetch and render training presets from GitHub
-  async function loadTrainingPresets() {
-    try {
-      const manifestUrl = 'https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/training-presets/profiles/manifest.json';
-      const manifestRes = await fetch(manifestUrl, { cache: "no-store" });
-      const manifest = await manifestRes.json();
-      const presetPromises = manifest.map(async (meta) => {
-        const presetRes = await fetch('https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/' + meta.path, { cache: "no-store" });
-        const preset = await presetRes.json();
-        return { ...meta, ...preset };
-      });
-      const presets = await Promise.all(presetPromises);
-
-      cardsContainer.innerHTML = '';
-      presets.forEach(preset => {
-        const card = document.createElement('div');
-        card.className = 'profile-card';
-        card.innerHTML = `
-          <div class="profile-avatar">🎯</div>
-          <div class="profile-info">
-            <div class="profile-name">${preset.name}</div>
-            <div class="profile-desc">${preset.description || preset.desc || ''}</div>
-          </div>
-          <button class="profile-action primary">Start Training</button>
-        `;
-        card.querySelector('.profile-action').addEventListener('click', () => {
-          // Start training with this preset (send message to background or content script)
-          chrome.runtime.sendMessage({ type: 'START_TRAINING', preset });
-          modal.classList.remove('active');
-          document.body.style.overflow = '';
-        });
-        cardsContainer.appendChild(card);
-      });
-    } catch (e) {
-      cardsContainer.innerHTML = '<div style="color:#f87171;">Failed to load training presets from GitHub.</div>';
+  // Load presets from GitHub and local storage
+  async function loadPresetsDropdown() {
+    // Fetch GitHub presets
+    let githubPresets = [];
+    const manifestUrl = 'https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/training-presets/manifest.json';
+    const manifestRes = await fetch(manifestUrl, { cache: "no-store" });
+    if (!manifestRes.ok) {
+      dropdown.innerHTML = '<option disabled selected>Failed to load presets from GitHub</option>';
+      dropdown.dataset.presets = '[]';
+      return;
     }
+    const manifest = await manifestRes.json();
+    const presetPromises = manifest.map(async (meta) => {
+      const res = await fetch('https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/' + meta.path, { cache: "no-store" });
+      if (!res.ok) return null;
+      const preset = await res.json();
+      return { ...meta, ...preset, source: 'github' };
+    });
+    githubPresets = (await Promise.all(presetPromises)).filter(Boolean);
+
+    // Load local presets
+    let localPresets = [];
+    const storage = await chrome.storage.local.get(['userPresets']);
+    localPresets = (storage.userPresets || []).map(p => ({ ...p, source: 'local' }));
+
+    // Merge and populate dropdown
+    const allPresets = [...githubPresets, ...localPresets];
+    dropdown.innerHTML = '';
+    if (allPresets.length === 0) {
+      dropdown.innerHTML = '<option disabled selected>No presets found</option>';
+    } else {
+      allPresets.forEach((preset, idx) => {
+        const opt = document.createElement('option');
+        opt.value = preset.id || preset.name || idx;
+        opt.textContent = `[${preset.source === 'github' ? 'GH' : 'Local'}] ${preset.name}`;
+        dropdown.appendChild(opt);
+      });
+    }
+    dropdown.dataset.presets = JSON.stringify(allPresets);
   }
 
-  openBtn.addEventListener('click', () => {
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    loadTrainingPresets();
+  // Start Training
+  startBtn.addEventListener('click', () => {
+    const allPresets = JSON.parse(dropdown.dataset.presets || '[]');
+    const selectedIdx = dropdown.selectedIndex;
+    const selectedPreset = allPresets[selectedIdx];
+    if (!selectedPreset) return;
+    chrome.runtime.sendMessage({ type: 'START_TRAINING', preset: selectedPreset });
   });
 
-  closeBtn.addEventListener('click', () => {
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-  });
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
+  // Edit Preset (local only)
+  editBtn.addEventListener('click', () => {
+    const allPresets = JSON.parse(dropdown.dataset.presets || '[]');
+    const selectedIdx = dropdown.selectedIndex;
+    const selectedPreset = allPresets[selectedIdx];
+    if (!selectedPreset || selectedPreset.source !== 'local') {
+      alert('Only local presets can be edited.');
+      return;
+    }
+    // Simple prompt-based edit (for demo)
+    const newName = prompt('Edit preset name:', selectedPreset.name);
+    if (newName) {
+      selectedPreset.name = newName;
+      chrome.storage.local.get(['userPresets'], (storage) => {
+        let userPresets = storage.userPresets || [];
+        userPresets = userPresets.map(p => p.id === selectedPreset.id ? selectedPreset : p);
+        chrome.storage.local.set({ userPresets }, loadPresetsDropdown);
+      });
     }
   });
+
+  // Create Preset (local)
+  createBtn.addEventListener('click', () => {
+    const name = prompt('Preset name:');
+    if (!name) return;
+    const newPreset = {
+      id: 'local-' + Date.now(),
+      name,
+      source: 'local',
+      description: '',
+      searches: [],
+      watchPatterns: [],
+      channelPreferences: [],
+      targetKeywords: [],
+      avoidKeywords: [],
+      trainingDuration: 30,
+      advancedOptions: {}
+    };
+    chrome.storage.local.get(['userPresets'], (storage) => {
+      let userPresets = storage.userPresets || [];
+      userPresets.push(newPreset);
+      chrome.storage.local.set({ userPresets }, loadPresetsDropdown);
+    });
+  });
+
+  // Reload presets on open
+  loadPresetsDropdown();
 }
 
 // Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   new PopupManager();
-  setupProfilesModal();
-  setupTrainingModal();
+  setupProfileSwitcher();
+  setupTrainingSwitcher();
 });
 
 // Listen for messages from background script
