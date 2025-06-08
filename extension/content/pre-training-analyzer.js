@@ -70,8 +70,15 @@ class PreTrainingAnalyzer {
     return tfidf;
   }
 
-  analyze(historyVideos = []) {
+  async analyze(historyVideos = []) {
     console.log('🔬 Starting pre-training analysis of recommendations...');
+
+    // Scroll down to ensure recommendations are loaded, similar to history analyzer
+    for (let i = 0; i < 3; i++) {
+      window.scrollTo(0, document.body.scrollHeight);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+
     const recommendedVideos = this.scrapeRecommended();
 
     const allVideoData = [
@@ -144,7 +151,11 @@ class PreTrainingAnalyzer {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'ANALYZE_RECOMMENDATIONS') {
     const analyzer = new PreTrainingAnalyzer();
-    analyzer.analyze(message.historyVideos);
-    sendResponse({ success: true });
+    // Use an async IIFE to handle the async analyze method
+    (async () => {
+      await analyzer.analyze(message.historyVideos);
+      sendResponse({ success: true });
+    })();
+    return true; // Keep the message channel open for the async response
   }
 });
