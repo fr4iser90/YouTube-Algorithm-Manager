@@ -154,13 +154,18 @@ class PreTrainingAnalyzer {
       );
 
       if (container && titleElement.textContent && titleElement.textContent.trim()) {
-        // More robust channel and description selectors
-        const channelElement = container.querySelector('ytd-channel-name a, #channel-name a, .ytd-channel-name');
+        const channelContainer = container.querySelector('ytd-channel-name');
+        let channelName = 'Unknown Channel';
+        if (channelContainer) {
+            const channelLink = channelContainer.querySelector('a');
+            channelName = (channelLink || channelContainer).textContent.trim();
+        }
+        
         const descriptionElement = container.querySelector('#description-text, .metadata-snippet-text');
 
         const videoData = {
           title: titleElement.textContent.trim(),
-          channel: channelElement ? channelElement.textContent.trim() : 'Unknown Channel', // Add a fallback
+          channel: channelName,
           description: descriptionElement ? descriptionElement.textContent.trim() : '',
         };
 

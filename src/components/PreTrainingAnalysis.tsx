@@ -137,10 +137,18 @@ export function PreTrainingAnalysis() {
                 <ResponsiveContainer>
                   <BarChart data={results.topChannels} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                     <XAxis type="number" hide />
-                    <YAxis dataKey="channel" type="category" width={150} tick={{ fill: '#9CA3AF' }} axisLine={{ stroke: '#4B5563' }} />
+                    <YAxis
+                      dataKey="channel"
+                      type="category"
+                      width={150}
+                      tick={{ fill: '#9CA3AF' }}
+                      axisLine={{ stroke: '#4B5563' }}
+                      tickFormatter={(value) => (value.length > 20 ? `${value.substring(0, 18)}...` : value)}
+                    />
                     <Tooltip
                       cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
                       contentStyle={{ backgroundColor: '#1F2937', borderColor: '#4B5563', color: '#E5E7EB' }}
+                      labelStyle={{ color: '#E5E7EB' }}
                     />
                     <Legend wrapperStyle={{ color: '#E5E7EB' }} />
                     <Bar dataKey="count" name="Video Count" fill="#A78BFA" />
