@@ -502,37 +502,31 @@
           <button id="closeProfilesModal" class="modal-close">&times;</button>
         </div>
         <div class="modal-content">
-          <div class="profile-cards">
-            <!-- Example Profile Card -->
-            <div class="profile-card active">
-              <div class="profile-avatar">🧑‍💻</div>
-              <div class="profile-info">
-                <div class="profile-name">Tech Guru</div>
-                <div class="profile-desc">Tech-focused recommendations</div>
-              </div>
-              <button class="profile-action primary">Active</button>
-            </div>
-            <div class="profile-card">
-              <div class="profile-avatar">🎨</div>
-              <div class="profile-info">
-                <div class="profile-name">Art Explorer</div>
-                <div class="profile-desc">Art & creativity profile</div>
-              </div>
-              <button class="profile-action secondary">Switch</button>
-            </div>
-            <!-- Add Profile Card -->
-            <div class="profile-card add-profile">
-              <div class="profile-avatar">+</div>
-              <div class="profile-info">
-                <div class="profile-name">Add Profile</div>
-                <div class="profile-desc">Create a new profile</div>
-              </div>
-              <button class="profile-action success">Add</button>
-            </div>
-          </div>
+          <div class="profile-cards"></div>
         </div>
       </div>
     </div>
+
+    <!-- Training Presets Modal -->
+    <div id="trainingModal" class="modal-overlay">
+      <div class="modal-window">
+        <div class="modal-header">
+          <span class="modal-title">Training Presets</span>
+          <button id="closeTrainingModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="training-cards"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Training Button -->
+    <button id="openTrainingModal" class="fab-training" title="Manage Training Presets" style="position: fixed; bottom: 140px; right: 30px; width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%); color: white; border: none; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: center; z-index: 100; cursor: pointer; transition: box-shadow 0.2s, transform 0.2s;">
+      <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="8" fill="#F59E0B"/>
+        <text x="10" y="15" text-anchor="middle" font-size="12" fill="white" font-family="Arial" font-weight="bold">🎯</text>
+      </svg>
+    </button>
     
     <!-- Action Buttons -->
     <div class="actions">

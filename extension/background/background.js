@@ -232,7 +232,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     
     // Open welcome page or instructions
     chrome.tabs.create({
-      url: 'https://tiny-semolina-f9b419.netlify.app'
+      //url = 'https://tiny-semolina-f9b419.netlify.app';
+      url = 'http://localhost:5173';
     });
   }
 });

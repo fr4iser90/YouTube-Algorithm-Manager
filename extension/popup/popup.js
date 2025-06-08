@@ -157,8 +157,9 @@ class PopupManager {
   async openWebApp() {
     try {
       // Use the deployed web app URL
-      const webAppUrl = 'https://tiny-semolina-f9b419.netlify.app';
-      
+      //const webAppUrl = 'https://tiny-semolina-f9b419.netlify.app';
+      const webAppUrl = 'http://localhost:5173';
+
       await chrome.tabs.create({ url: webAppUrl });
       window.close();
       
@@ -507,10 +508,77 @@ function setupProfilesModal() {
   });
 }
 
+/* --- Training Presets Modal Logic --- */
+function setupTrainingModal() {
+  const openBtn = document.getElementById('openTrainingModal');
+  const modal = document.getElementById('trainingModal');
+  const closeBtn = document.getElementById('closeTrainingModal');
+  const cardsContainer = modal?.querySelector('.training-cards');
+
+  if (!openBtn || !modal || !closeBtn || !cardsContainer) return;
+
+  // Fetch and render training presets from GitHub
+  async function loadTrainingPresets() {
+    try {
+      const manifestUrl = 'https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/training-presets/profiles/manifest.json';
+      const manifestRes = await fetch(manifestUrl, { cache: "no-store" });
+      const manifest = await manifestRes.json();
+      const presetPromises = manifest.map(async (meta) => {
+        const presetRes = await fetch('https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/' + meta.path, { cache: "no-store" });
+        const preset = await presetRes.json();
+        return { ...meta, ...preset };
+      });
+      const presets = await Promise.all(presetPromises);
+
+      cardsContainer.innerHTML = '';
+      presets.forEach(preset => {
+        const card = document.createElement('div');
+        card.className = 'profile-card';
+        card.innerHTML = `
+          <div class="profile-avatar">🎯</div>
+          <div class="profile-info">
+            <div class="profile-name">${preset.name}</div>
+            <div class="profile-desc">${preset.description || preset.desc || ''}</div>
+          </div>
+          <button class="profile-action primary">Start Training</button>
+        `;
+        card.querySelector('.profile-action').addEventListener('click', () => {
+          // Start training with this preset (send message to background or content script)
+          chrome.runtime.sendMessage({ type: 'START_TRAINING', preset });
+          modal.classList.remove('active');
+          document.body.style.overflow = '';
+        });
+        cardsContainer.appendChild(card);
+      });
+    } catch (e) {
+      cardsContainer.innerHTML = '<div style="color:#f87171;">Failed to load training presets from GitHub.</div>';
+    }
+  }
+
+  openBtn.addEventListener('click', () => {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    loadTrainingPresets();
+  });
+
+  closeBtn.addEventListener('click', () => {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
+}
+
 // Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   new PopupManager();
   setupProfilesModal();
+  setupTrainingModal();
 });
 
 // Listen for messages from background script
