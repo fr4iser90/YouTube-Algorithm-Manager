@@ -139,6 +139,7 @@ class PreTrainingAnalyzer {
       recommendedVideoCount: recommendedVideos.length,
       topKeywords: topKeywords,
       topChannels: topChannels,
+      topVideos: recommendedVideos.slice(0, 20), // Add top videos
       timestamp: Date.now()
     };
 
@@ -167,6 +168,7 @@ class PreTrainingAnalyzer {
           title: titleElement.textContent.trim(),
           channel: channelName,
           description: descriptionElement ? descriptionElement.textContent.trim() : '',
+          url: titleElement.href,
         };
 
         if (!videos.some(v => v.title === videoData.title)) {

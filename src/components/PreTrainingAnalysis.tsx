@@ -7,10 +7,11 @@ interface AnalysisResults {
   recommendedVideoCount: number;
   topKeywords: { term: string; score: number }[];
   topChannels: { channel: string; count: number }[];
+  topVideos: { title: string; url: string }[];
   timestamp: number;
 }
 
-type AnalysisTab = 'keywords' | 'channels';
+type AnalysisTab = 'keywords' | 'channels' | 'videos';
 
 export function PreTrainingAnalysis() {
   const [results, setResults] = useState<AnalysisResults | null>(null);
@@ -19,9 +20,17 @@ export function PreTrainingAnalysis() {
   const [analysisStep, setAnalysisStep] = useState('');
 
   useEffect(() => {
+    // Load last results on mount
+    chrome.storage.local.get('lastAnalysisResults', (data) => {
+      if (data.lastAnalysisResults) {
+        setResults(data.lastAnalysisResults);
+      }
+    });
+
     const handleMessage = (message: any) => {
       if (message.type === 'PRE_TRAINING_ANALYSIS_COMPLETE') {
         setResults(message.results);
+        chrome.storage.local.set({ lastAnalysisResults: message.results }); // Save results
         setIsAnalyzing(false);
         setAnalysisStep('');
       } else if (message.type === 'HISTORY_ANALYSIS_COMPLETE') {
@@ -158,6 +167,16 @@ export function PreTrainingAnalysis() {
                 >
                   Top Channels
                 </button>
+                <button
+                  onClick={() => setActiveTab('videos')}
+                  className={`px-4 py-2 text-sm font-medium ${
+                    activeTab === 'videos'
+                      ? 'border-b-2 border-purple-500 text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Top Videos
+                </button>
               </div>
               <button
                 onClick={saveAsProfile}
@@ -204,6 +223,24 @@ export function PreTrainingAnalysis() {
                     <Bar dataKey="count" name="Video Count" fill="#A78BFA" />
                   </BarChart>
                 </ResponsiveContainer>
+              )}
+              {activeTab === 'videos' && (
+                <div className="overflow-y-auto h-full">
+                  <ul className="space-y-2">
+                    {results.topVideos.map((video, index) => (
+                      <li key={index} className="text-sm">
+                        <a
+                          href={video.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:underline"
+                        >
+                          {video.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>

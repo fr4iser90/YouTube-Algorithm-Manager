@@ -112,29 +112,23 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
       tags: newProfileTags
     };
 
-    const updatedProfiles = [...savedProfiles, newProfile];
-    saveProfiles(updatedProfiles);
-    
-    setShowSaveDialog(false);
-    setNewProfileName('');
-    setNewProfileDescription('');
-    setNewProfileTags([]);
+    chrome.runtime.sendMessage({ type: 'SAVE_BUBBLE_PROFILE', profile: newProfile }, (response) => {
+      if (response.success) {
+        alert('Profile saved successfully!');
+        const updatedProfiles = [...savedProfiles, newProfile];
+        saveProfiles(updatedProfiles);
+        setShowSaveDialog(false);
+        setNewProfileName('');
+        setNewProfileDescription('');
+        setNewProfileTags([]);
+      } else {
+        alert(`Error saving profile: ${response.error}`);
+      }
+    });
   };
 
   const loadProfile = (profile: SavedProfile) => {
     try {
-      // Restore cookies
-      const cookieData = JSON.parse(atob(profile.cookies));
-      // Note: In real implementation, you'd need to properly restore cookies
-      
-      // Restore localStorage (carefully to not overwrite app data)
-      const localStorageData = JSON.parse(atob(profile.localStorage));
-      Object.keys(localStorageData).forEach(key => {
-        if (key.startsWith('youtube-') || key.startsWith('bubble-')) {
-          localStorage.setItem(key, localStorageData[key]);
-        }
-      });
-
       // Mark profile as active and update last used
       const updatedProfiles = savedProfiles.map(s => ({
         ...s,
@@ -148,6 +142,14 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
     } catch (error) {
       console.error('Failed to load profile:', error);
     }
+  };
+
+  const browseWithProfile = (profile: SavedProfile) => {
+    chrome.runtime.sendMessage({
+      type: 'BROWSE_WITH_PROFILE',
+      profile: profile,
+    });
+    onClose();
   };
 
   const deleteProfile = (profileId: string) => {
@@ -476,12 +478,12 @@ export const ProfileLoader: React.FC<ProfileLoaderProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          loadProfile(profile);
+                          browseWithProfile(profile);
                         }}
                         className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
                       >
                         <Play className="h-4 w-4" />
-                        <span>Load Profile (Instant)</span>
+                        <span>Browse with Profile</span>
                       </button>
                     </motion.div>
                   )}
