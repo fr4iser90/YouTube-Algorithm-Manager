@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Play, History, BrainCircuit } from 'lucide-react';
+import { Play, History, BrainCircuit, Save } from 'lucide-react';
 
 interface AnalysisResults {
   historyVideoCount: number;
@@ -46,6 +46,47 @@ export function PreTrainingAnalysis() {
       setIsAnalyzing(false);
       setAnalysisStep('');
     }
+  };
+
+  const saveAsProfile = () => {
+    if (!results) return;
+
+    const profileName = prompt('Enter a name for this new profile:', 'My Custom Profile');
+    if (!profileName) return;
+
+    const newProfile = {
+      id: `custom-${Date.now()}`,
+      name: profileName,
+      desc: `Profile generated from analysis on ${new Date(results.timestamp).toLocaleString()}`,
+      avatar: '🔬',
+      category: 'custom',
+      language: 'en',
+      region: 'US',
+      searches: results.topKeywords.map(kw => ({
+        query: kw.term,
+        frequency: 2,
+        duration: 60
+      })),
+      targetKeywords: results.topKeywords.map(kw => kw.term),
+      avoidKeywords: [],
+      trainingDuration: 15,
+      advancedOptions: {
+        clearHistoryFirst: true,
+        useIncognito: true,
+        simulateRealTiming: true,
+        engagementRate: 0.4,
+        skipAds: true
+      }
+    };
+
+    // Send to background script to save
+    chrome.runtime.sendMessage({ type: 'SAVE_PROFILE', profile: newProfile }, (response) => {
+      if (response.success) {
+        alert(`Profile "${profileName}" saved successfully!`);
+      } else {
+        alert(`Error saving profile: ${response.error}`);
+      }
+    });
   };
 
   return (
@@ -95,26 +136,35 @@ export function PreTrainingAnalysis() {
           </div>
 
           <div>
-            <div className="flex border-b border-gray-700 mb-4">
+            <div className="flex justify-between items-center border-b border-gray-700 mb-4">
+              <div className="flex">
+                <button
+                  onClick={() => setActiveTab('keywords')}
+                  className={`px-4 py-2 text-sm font-medium ${
+                    activeTab === 'keywords'
+                      ? 'border-b-2 border-purple-500 text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Top Keywords
+                </button>
+                <button
+                  onClick={() => setActiveTab('channels')}
+                  className={`px-4 py-2 text-sm font-medium ${
+                    activeTab === 'channels'
+                      ? 'border-b-2 border-purple-500 text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Top Channels
+                </button>
+              </div>
               <button
-                onClick={() => setActiveTab('keywords')}
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeTab === 'keywords'
-                    ? 'border-b-2 border-purple-500 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                onClick={saveAsProfile}
+                className="flex items-center space-x-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm transition-colors"
               >
-                Top Keywords
-              </button>
-              <button
-                onClick={() => setActiveTab('channels')}
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeTab === 'channels'
-                    ? 'border-b-2 border-purple-500 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Top Channels
+                <Save className="h-4 w-4" />
+                <span>Save as Profile</span>
               </button>
             </div>
 
