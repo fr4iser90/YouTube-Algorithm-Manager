@@ -38,98 +38,88 @@ export const YouTubeAutomation: React.FC<YouTubeAutomationProps> = ({
     currentVideoTitle: ''
   });
 
-  // Simulate real-time automation actions
+  // Listen for real training progress updates
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleTrainingProgress = (event: MessageEvent) => {
+      if (event.data.type === 'TRAINING_PROGRESS') {
+        const progressData = event.data.progress;
+        
+        // Update real-time data
+        setRealTimeData(prev => ({
+          ...prev,
+          recommendationsFound: progressData.recommendations?.length || 0,
+          videosWatched: progressData.videosWatched || 0,
+          searchesPerformed: progressData.searchesPerformed || 0,
+          engagementsPerformed: progressData.engagementsPerformed || 0,
+          currentUrl: progressData.currentUrl || prev.currentUrl,
+          currentVideoTitle: progressData.currentVideoTitle || prev.currentVideoTitle
+        }));
+
+        // Update actions queue based on progress message
+        if (progressData.message) {
+          const newAction: AutomationAction = {
+            id: `action-${Date.now()}`,
+            type: progressData.message.toLowerCase().includes('search') ? 'search' :
+                  progressData.message.toLowerCase().includes('watch') ? 'watch' :
+                  progressData.message.toLowerCase().includes('like') ? 'like' :
+                  'navigate',
+            description: progressData.message,
+            status: 'completed',
+            progress: 100,
+            data: progressData
+          };
+
+          setActions(prev => {
+            const updatedActions = [...prev, newAction].slice(-10);
+            setCurrentAction(updatedActions[updatedActions.length - 1]);
+            return updatedActions;
+          });
+        }
+      }
+    };
+
+    // Listen for messages from the extension
+    window.addEventListener('message', handleTrainingProgress);
+
+    // Also listen for chrome runtime messages
+    if (chrome?.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message.type === 'TRAINING_PROGRESS') {
+          handleTrainingProgress({ data: message } as MessageEvent);
+        }
+      });
+    }
+
+    return () => {
+      window.removeEventListener('message', handleTrainingProgress);
+      if (chrome?.runtime?.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleTrainingProgress);
+      }
+    };
+  }, [isActive]);
+
+  // Initialize actions from preset when training starts
   useEffect(() => {
     if (!isActive || !currentPreset) return;
 
-    const generateActions = () => {
-      const newActions: AutomationAction[] = [];
-      
-      // Generate search actions
-      currentPreset.searches?.forEach((search: any, index: number) => {
-        newActions.push({
-          id: `search-${index}`,
-          type: 'search',
-          description: `Suche nach: "${search.query}"`,
-          status: 'pending',
-          duration: search.duration || 60,
-          data: search
-        });
+    const initialActions: AutomationAction[] = [];
+    
+    // Add search actions from preset
+    currentPreset.searches?.forEach((search: any, index: number) => {
+      initialActions.push({
+        id: `search-${index}`,
+        type: 'search',
+        description: `Suche nach: "${search.query}"`,
+        status: 'pending',
+        duration: search.duration || 60,
+        data: search
       });
+    });
 
-      // Generate watch actions
-      for (let i = 0; i < 10; i++) {
-        newActions.push({
-          id: `watch-${i}`,
-          type: 'watch',
-          description: `Video ${i + 1} ansehen`,
-          status: 'pending',
-          duration: Math.floor(Math.random() * 120) + 30,
-        });
-      }
-
-      // Generate engagement actions
-      for (let i = 0; i < 5; i++) {
-        newActions.push({
-          id: `like-${i}`,
-          type: 'like',
-          description: `Video ${i + 1} liken`,
-          status: 'pending',
-          duration: 2,
-        });
-      }
-
-      setActions(newActions);
-    };
-
-    generateActions();
+    setActions(initialActions);
   }, [isActive, currentPreset]);
-
-  // Simulate action execution
-  useEffect(() => {
-    if (!isActive || actions.length === 0) return;
-
-    const executeNextAction = () => {
-      const nextAction = actions.find(a => a.status === 'pending');
-      if (!nextAction) return;
-
-      setCurrentAction(nextAction);
-      setActions(prev => prev.map(a => 
-        a.id === nextAction.id ? { ...a, status: 'running', progress: 0 } : a
-      ));
-
-      // Simulate action progress
-      const duration = nextAction.duration || 30;
-      const interval = setInterval(() => {
-        setActions(prev => prev.map(a => {
-          if (a.id === nextAction.id) {
-            const newProgress = (a.progress || 0) + (100 / duration);
-            if (newProgress >= 100) {
-              clearInterval(interval);
-              
-              // Update real-time data
-              setRealTimeData(prev => ({
-                ...prev,
-                recommendationsFound: prev.recommendationsFound + (nextAction.type === 'search' ? 10 : 0),
-                videosWatched: prev.videosWatched + (nextAction.type === 'watch' ? 1 : 0),
-                searchesPerformed: prev.searchesPerformed + (nextAction.type === 'search' ? 1 : 0),
-                engagementsPerformed: prev.engagementsPerformed + (nextAction.type === 'like' ? 1 : 0),
-                currentUrl: nextAction.type === 'watch' ? `https://youtube.com/watch?v=example${Math.random()}` : prev.currentUrl,
-                currentVideoTitle: nextAction.type === 'watch' ? `Example Video ${Math.floor(Math.random() * 100)}` : prev.currentVideoTitle
-              }));
-
-              setTimeout(executeNextAction, 1000);
-              return { ...a, status: 'completed', progress: 100 };
-            }
-            return { ...a, progress: newProgress };
-          }
-          return a;
-        }));
-      }, 1000);
-    };
-
-    executeNextAction();
-  }, [isActive, actions]);
 
   const getActionIcon = (type: string) => {
     switch (type) {

@@ -10,7 +10,9 @@
     "cookies",
     "webRequest",
     "downloads",
-    "alarms"
+    "alarms",
+    "scripting",
+    "browsingData"
   ],
   
   "host_permissions": [

@@ -34,67 +34,63 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
     diversityScore: 0
   });
 
-  // Simulate real-time recommendation data
+  // Listen for real training progress updates
   useEffect(() => {
     if (!isActive) return;
 
-    const interval = setInterval(() => {
-      // Generate mock recommendation
-      const mockTitles = [
-        'AI Tutorial für Anfänger',
-        'Programmieren lernen in 2024',
-        'Tech News diese Woche',
-        'Drama zwischen YouTubern',
-        'Clickbait Video Titel!!!',
-        'Machine Learning erklärt',
-        'Software Engineering Best Practices',
-        'Gossip und Klatsch',
-        'Wissenschaftliche Studie erklärt',
-        'Kontroverse Meinung zu...'
-      ];
+    const handleTrainingProgress = (event: MessageEvent) => {
+      if (event.data.type === 'TRAINING_PROGRESS') {
+        const progressData = event.data.progress;
+        
+        // Update recommendations with real data
+        if (progressData.recommendations) {
+          const newRecommendations = progressData.recommendations.map((rec: any) => ({
+            timestamp: new Date(),
+            title: rec.title,
+            channel: rec.channel,
+            category: rec.category || 'neutral',
+            relevanceScore: rec.relevanceScore || 0,
+            isTargetContent: targetKeywords.some(keyword => 
+              rec.title.toLowerCase().includes(keyword.toLowerCase())
+            ),
+            isAvoidContent: avoidKeywords.some(keyword => 
+              rec.title.toLowerCase().includes(keyword.toLowerCase())
+            )
+          }));
+          
+          setRecommendations(prev => [...prev.slice(-19), ...newRecommendations]);
 
-      const mockChannels = [
-        'TechChannel', 'CodeAcademy', 'ScienceExplained', 
-        'DramaAlert', 'ClickbaitKing', 'AIResearch',
-        'ProgrammingGuru', 'GossipGirl', 'FactChecker'
-      ];
+          // Update bubble strength over time
+          const currentTime = new Date().toLocaleTimeString();
+          setBubbleStrength(prev => {
+            const newData = [...prev.slice(-9), {
+              time: currentTime,
+              strength: progressData.bubbleScore || 0
+            }];
+            return newData;
+          });
+        }
+      }
+    };
 
-      const title = mockTitles[Math.floor(Math.random() * mockTitles.length)];
-      const channel = mockChannels[Math.floor(Math.random() * mockChannels.length)];
-      
-      const isTargetContent = targetKeywords.some(keyword => 
-        title.toLowerCase().includes(keyword.toLowerCase())
-      );
-      
-      const isAvoidContent = avoidKeywords.some(keyword => 
-        title.toLowerCase().includes(keyword.toLowerCase())
-      );
+    // Listen for messages from the extension
+    window.addEventListener('message', handleTrainingProgress);
 
-      const newRecommendation: RecommendationData = {
-        timestamp: new Date(),
-        title,
-        channel,
-        category: isTargetContent ? 'target' : isAvoidContent ? 'avoid' : 'neutral',
-        relevanceScore: Math.floor(Math.random() * 100),
-        isTargetContent,
-        isAvoidContent
-      };
-
-      setRecommendations(prev => [...prev.slice(-19), newRecommendation]);
-
-      // Update bubble strength over time
-      const currentTime = new Date().toLocaleTimeString();
-      setBubbleStrength(prev => {
-        const newData = [...prev.slice(-9), {
-          time: currentTime,
-          strength: Math.floor(Math.random() * 40) + 60
-        }];
-        return newData;
+    // Also listen for chrome runtime messages
+    if (chrome?.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message.type === 'TRAINING_PROGRESS') {
+          handleTrainingProgress({ data: message } as MessageEvent);
+        }
       });
+    }
 
-    }, 3000); // New recommendation every 3 seconds
-
-    return () => clearInterval(interval);
+    return () => {
+      window.removeEventListener('message', handleTrainingProgress);
+      if (chrome?.runtime?.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleTrainingProgress);
+      }
+    };
   }, [isActive, targetKeywords, avoidKeywords]);
 
   // Update stats when recommendations change

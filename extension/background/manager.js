@@ -21,26 +21,58 @@ export class TrainingManager {
     console.log('🚀 Starting training with preset:', preset.name);
 
     try {
-      // Finde einen aktiven YouTube-Tab oder erstelle einen neuen
-      let [youtubeTab] = await chrome.tabs.query({ url: "*://*.youtube.com/*", active: true });
-      if (!youtubeTab) {
-        [youtubeTab] = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
-      }
-      if (!youtubeTab) {
-        youtubeTab = await chrome.tabs.create({ url: "https://www.youtube.com" });
-      }
+      // Always create a new tab for training
+      const youtubeTab = await chrome.tabs.create({ url: "https://www.youtube.com" });
       this.trainingTab = youtubeTab;
 
-      // Warte, bis der Tab geladen ist
+      // Wait for the tab to load
       await waitForTabLoad(youtubeTab.id);
 
-      // Sende den Trainingsbefehl an das Content Script
+      // Handle cookies automatically with retry
+      const handleCookies = async () => {
+        const cookieSelectors = [
+          'button[aria-label*="Accept"]',
+          'button[aria-label*="Akzeptieren"]',
+          'button[aria-label*="Alle akzeptieren"]',
+          'button[aria-label*="Accept all"]',
+          'button[jsname*="tWT92d"]', // YouTube's cookie consent button class
+          'form[action*="consent"] button[type="submit"]',
+          'ytd-consent-bump-v2-lightbox button[aria-label*="Accept"]',
+          'ytd-consent-bump-v2-lightbox button[aria-label*="Akzeptieren"]'
+        ];
+
+        // Try multiple times with different selectors
+        for (let attempt = 0; attempt < 3; attempt++) {
+          await chrome.scripting.executeScript({
+            target: { tabId: youtubeTab.id },
+            func: (selectors) => {
+              for (const selector of selectors) {
+                const button = document.querySelector(selector);
+                if (button) {
+                  button.click();
+                  return true;
+                }
+              }
+              return false;
+            },
+            args: [cookieSelectors]
+          });
+
+          // Wait a bit before next attempt
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      };
+
+      // Try to handle cookies
+      await handleCookies();
+
+      // Send the training command to the content script
       await chrome.tabs.sendMessage(youtubeTab.id, {
         type: 'START_TRAINING',
         preset: preset
       });
 
-      // Speichere den Trainingsstatus
+      // Save training status
       await chrome.storage.local.set({
         isTraining: true,
         currentPreset: preset,
