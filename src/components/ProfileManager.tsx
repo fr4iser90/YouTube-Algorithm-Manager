@@ -49,6 +49,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({
   const saveCurrentProfile = () => {
     if (!currentPreset || !newProfileName.trim()) return;
 
+    // Get ALL cookies and storage data
     const cookies = document.cookie;
     const localStorageData = JSON.stringify(localStorage);
     const sessionStorageData = JSON.stringify(sessionStorage);
@@ -57,31 +58,56 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({
     console.log('🍪 Cookies:', cookies);
     console.log('🗄️ localStorage:', localStorageData);
     console.log('🗂️ sessionStorage:', sessionStorageData);
-    console.log('Data will be Base64 encoded for storage.');
 
     const newProfile: BrowserProfile = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name: newProfileName.trim(),
       description: newProfileDescription.trim(),
       algorithmState: currentAlgorithmState || {
+        id: Date.now().toString(),
+        profileId: '',
         timestamp: new Date(),
         recommendations: [],
-        sentiment: 'neutral',
-        profileScore: 0,
-        language: currentPreset?.language || 'en',
-        region: currentPreset?.region || 'US',
-        blockedChannels: [],
-        prioritizedChannels: []
+        categoryDistribution: [],
+        contentAnalysis: {
+          relevance: 0,
+          sentiment: 'neutral',
+          category: currentPreset?.category || 'general',
+          keywords: []
+        },
+        trainingProgress: 0,
+        lastTrainingDate: new Date(),
+        totalVideosWatched: 0,
+        totalSearches: 0,
+        averageWatchTime: 0,
+        preferredCategories: [],
+        preferredChannels: [],
+        preferredKeywords: [],
+        avoidedChannels: [],
+        avoidedKeywords: []
       },
+      // Save ALL data 1:1
       cookies: btoa(encodeURIComponent(cookies)),
       localStorage: btoa(encodeURIComponent(localStorageData)),
       sessionStorage: btoa(encodeURIComponent(sessionStorageData)),
+      userAgent: navigator.userAgent,
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      },
       createdAt: new Date(),
       lastUsed: new Date(),
-      profileStrength: currentAlgorithmState?.profileScore || 0,
-      totalVideosWatched: Math.floor(Math.random() * 100) + 50,
-      totalSearches: Math.floor(Math.random() * 50) + 20,
-      trainingHours: Math.floor(Math.random() * 10) + 2,
+      profileStrength: 0,
+      totalVideosWatched: 0,
+      totalSearches: 0,
+      trainingHours: 0,
+      averageWatchTime: 0,
+      preferredCategories: [],
+      preferredChannels: [],
+      preferredKeywords: [],
+      watchHistory: [],
+      avoidedChannels: [],
+      avoidedKeywords: [],
       isActive: false,
       tags: newProfileTags,
       language: currentPreset?.language || 'en',

@@ -88,6 +88,25 @@ export function setupMessageHandlers() {
         });
         return true;
 
+      case 'PROFILE_UPDATED':
+        // Update profile in storage
+        chrome.storage.local.get(['profiles'], (result) => {
+          if (result.profiles) {
+            const updatedProfiles = result.profiles.map(p => 
+              p.id === message.profile.id ? message.profile : p
+            );
+            chrome.storage.local.set({ profiles: updatedProfiles });
+            
+            // Notify web app about profile update
+            chrome.runtime.sendMessage({
+              type: 'PROFILE_UPDATED',
+              profile: message.profile
+            });
+          }
+        });
+        sendResponse({ success: true });
+        break;
+
       default:
         sendResponse({ success: false, error: 'Unknown message type' });
     }

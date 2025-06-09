@@ -395,6 +395,38 @@ export const Header: React.FC<HeaderProps> = ({
                   </span>
                 );
               })()}
+
+              {/* Freeze Profile Checkbox */}
+              {(() => {
+                const activeProfile = savedProfiles.find((p: any) => p.isActive);
+                if (activeProfile) {
+                  return (
+                    <label className="flex items-center space-x-2 px-3 py-1 bg-gray-800 rounded-md cursor-pointer hover:bg-gray-700 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={activeProfile.freezeProfile || false}
+                        onChange={(e) => {
+                          const updatedProfiles = savedProfiles.map(p => 
+                            p.id === activeProfile.id 
+                              ? { ...p, freezeProfile: e.target.checked }
+                              : p
+                          );
+                          setSavedProfiles(updatedProfiles);
+                          // Save to storage
+                          chrome.storage.local.set({ 
+                            profiles: updatedProfiles,
+                            freezeProfile: e.target.checked
+                          });
+                        }}
+                        className="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-300">Freeze Profile</span>
+                    </label>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Browse Buttons */}
               <button
                 onClick={handleBrowseAnonymousWrapped}

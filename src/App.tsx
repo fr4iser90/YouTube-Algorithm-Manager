@@ -169,6 +169,11 @@ function App() {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'YT_TRAINER_STATUS') {
         setExtensionTrainingActive(event.data.isTraining);
+      } else if (event.data.type === 'PROFILE_UPDATED') {
+        // Update profile in state
+        setSavedProfiles(prev => 
+          prev.map(p => p.id === event.data.profile.id ? event.data.profile : p)
+        );
       }
     };
     

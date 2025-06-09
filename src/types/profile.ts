@@ -19,6 +19,7 @@ export interface BrowserProfile {
   // Status
   isActive: boolean;
   tags: string[];
+  freezeProfile?: boolean;  // Whether to freeze profile updates
   
   // Anonymous interactions & statistics
   totalVideosWatched: number;

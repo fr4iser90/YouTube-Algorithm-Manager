@@ -1,5 +1,15 @@
 # 🎯 YouTube Algorithm Trainer - Browser Extension
 
+## ⚠️ Disclaimer ⚠️
+
+This browser extension automates interactions with YouTube for research and content analysis. However, using automated scripts to interact with websites like YouTube may violate their terms of service.
+
+**RISK OF ACCOUNT BAN:** The use of this extension could be detected by YouTube as bot activity, which may result in a temporary or permanent ban of your YouTube account.
+
+**USE AT YOUR OWN RISK:** You are solely responsible for any consequences that may arise from using this extension, including the loss of your YouTube account. The author of this extension is not liable for any damages or losses.
+
+---
+
 ## 📋 **INSTALLATION**
 
 ### **Chrome/Edge:**

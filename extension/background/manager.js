@@ -39,7 +39,14 @@ export class TrainingManager {
       // Handle cookies automatically with retry
       const handleCookies = async () => {
         const cookieSelectors = [
-          // YouTube's specific consent button structure
+          // YouTube's latest consent button structure
+          'button[aria-label*="Accept"]',
+          'button[aria-label*="Akzeptieren"]',
+          'button[aria-label*="Alle akzeptieren"]',
+          'button[aria-label*="Accept all"]',
+          'button[aria-label*="I agree"]',
+          'button[aria-label*="Ich stimme zu"]',
+          // YouTube's specific button classes
           'button.yt-spec-button-shape-next--filled',
           'button.yt-spec-button-shape-next--call-to-action',
           'div.yt-spec-touch-feedback-shape__fill',
@@ -49,13 +56,6 @@ export class TrainingManager {
           // Specific button classes
           'button[jsname*="tWT92d"]',
           'button[jsname*="ZUkOIc"]',
-          // Aria labels in different languages
-          'button[aria-label*="Accept"]',
-          'button[aria-label*="Akzeptieren"]',
-          'button[aria-label*="Alle akzeptieren"]',
-          'button[aria-label*="Accept all"]',
-          'button[aria-label*="I agree"]',
-          'button[aria-label*="Ich stimme zu"]',
           // Form submit buttons
           'form[action*="consent"] button[type="submit"]',
           // Generic consent buttons
@@ -69,7 +69,7 @@ export class TrainingManager {
         for (let attempt = 0; attempt < 5; attempt++) {
           try {
             // Wait for page to be fully loaded
-            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+            await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
 
             const result = await chrome.scripting.executeScript({
               target: { tabId: youtubeTab.id },
@@ -111,8 +111,8 @@ export class TrainingManager {
                 trainingStartTime: Date.now(),
                 pendingTraining: true
               });
-              // Wait a bit to make sure the consent is processed
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              // Wait a bit longer to make sure the consent is processed
+              await new Promise(resolve => setTimeout(resolve, 2000));
               break;
             }
           } catch (error) {
@@ -200,26 +200,37 @@ export class TrainingManager {
         }
       };
 
-      // 2. Restore localStorage and sessionStorage
+      // 2. Restore ALL localStorage and sessionStorage data
       const localStorageData = JSON.parse(decode(profile.localStorage) || '{}');
       const sessionStorageData = JSON.parse(decode(profile.sessionStorage) || '{}');
 
       await chrome.scripting.executeScript({
         target: { tabId: newTab.id },
         func: (lsData, ssData) => {
+          // Copy ALL localStorage data
           Object.keys(lsData).forEach(key => {
-            localStorage.setItem(key, lsData[key]);
+            try {
+              localStorage.setItem(key, lsData[key]);
+            } catch (e) {
+              console.log('Failed to set localStorage item:', key, e);
+            }
           });
+          
+          // Copy ALL sessionStorage data
           Object.keys(ssData).forEach(key => {
-            sessionStorage.setItem(key, ssData[key]);
+            try {
+              sessionStorage.setItem(key, ssData[key]);
+            } catch (e) {
+              console.log('Failed to set sessionStorage item:', key, e);
+            }
           });
         },
         args: [localStorageData, sessionStorageData],
         world: 'MAIN'
       });
 
-      // 3. Restore Cookies
-      const cookieStr = JSON.parse(decode(profile.cookies) || '""');
+      // 3. Restore ALL Cookies
+      const cookieStr = decode(profile.cookies) || '';
       const cookies = cookieStr.split(';').map(c => c.trim());
 
       for (const cookie of cookies) {
@@ -228,16 +239,20 @@ export class TrainingManager {
         const value = valueParts.join('=');
         
         if (name && value) {
-          await chrome.cookies.set({
-            url: 'https://www.youtube.com',
-            name: name,
-            value: value,
-            domain: '.youtube.com',
-            path: '/',
-            secure: true,
-            httpOnly: false, // Cannot set httpOnly from an extension
-            sameSite: 'no_restriction'
-          });
+          try {
+            await chrome.cookies.set({
+              url: 'https://www.youtube.com',
+              name: name,
+              value: value,
+              domain: '.youtube.com',
+              path: '/',
+              secure: true,
+              httpOnly: false,
+              sameSite: 'no_restriction'
+            });
+          } catch (e) {
+            console.log('Failed to set cookie:', name, e);
+          }
         }
       }
       
@@ -331,6 +346,45 @@ export class TrainingManager {
     chrome.storage.local.set({
       lastTrainingResults: results,
       isTraining: false
+    });
+
+    // Update profile with training data
+    chrome.storage.local.get(['profiles', 'activeProfileId'], async (storage) => {
+      if (storage.profiles && storage.activeProfileId) {
+        const profiles = storage.profiles;
+        const activeProfile = profiles.find(p => p.id === storage.activeProfileId);
+        
+        if (activeProfile) {
+          // Update profile statistics
+          activeProfile.totalVideosWatched += results.videosWatched;
+          activeProfile.totalSearches += results.searchesPerformed;
+          activeProfile.trainingHours += Math.round((Date.now() - results.startTime) / (1000 * 60 * 60));
+          activeProfile.profileStrength = results.profileScore;
+          activeProfile.lastTrainingDate = new Date();
+          
+          // Update preferred categories and channels from recommendations
+          if (results.recommendations) {
+            results.recommendations.forEach(rec => {
+              if (rec.category && !activeProfile.preferredCategories.includes(rec.category)) {
+                activeProfile.preferredCategories.push(rec.category);
+              }
+              if (rec.channel && !activeProfile.preferredChannels.includes(rec.channel)) {
+                activeProfile.preferredChannels.push(rec.channel);
+              }
+            });
+          }
+
+          // Save updated profile
+          const updatedProfiles = profiles.map(p => p.id === activeProfile.id ? activeProfile : p);
+          await chrome.storage.local.set({ profiles: updatedProfiles });
+          
+          // Notify web app about profile update
+          chrome.runtime.sendMessage({
+            type: 'PROFILE_UPDATED',
+            profile: activeProfile
+          });
+        }
+      }
     });
 
     // Update badge

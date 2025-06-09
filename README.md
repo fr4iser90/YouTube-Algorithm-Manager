@@ -1,5 +1,15 @@
 # YouTube Algorithm Manager
 
+## ⚠️ Disclaimer ⚠️
+
+This browser extension automates interactions with YouTube for research and content analysis. However, using automated scripts to interact with websites like YouTube may violate their terms of service.
+
+**RISK OF ACCOUNT BAN:** The use of this extension could be detected by YouTube as bot activity, which may result in a temporary or permanent ban of your YouTube account.
+
+**USE AT YOUR OWN RISK:** You are solely responsible for any consequences that may arise from using this extension, including the loss of your YouTube account. The author of this extension is not liable for any damages or losses.
+
+---
+
 ## 📋 Overview
 This project is a web application designed to train and manage YouTube's recommendation algorithm using a browser extension. It allows users to create custom presets, save profiles, and interact with YouTube in real-time to influence their recommendations.
 
@@ -85,4 +95,4 @@ The application is built using a modern React-based architecture with the follow
 - Enhance the UI/UX for better user experience.
 
 ## 📄 License
-This project is licensed under the MIT License. See the LICENSE file for details. 
+This project is licensed under the MIT License. See the LICENSE file for details.

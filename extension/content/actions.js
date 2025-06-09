@@ -83,17 +83,77 @@ async function watchVideo(duration) {
       video.play();
     }
 
+    // Get current video data
+    const videoData = {
+      videoId: getVideoId(window.location.href),
+      title: document.querySelector('h1.title')?.textContent?.trim() || '',
+      channel: document.querySelector('#channel-name a')?.textContent?.trim() || '',
+      category: document.querySelector('#top-level-buttons-computed')?.textContent?.includes('Gaming') ? 'Gaming' : 'Other',
+      watchTime: duration,
+      timestamp: new Date(),
+      url: window.location.href
+    };
+
+    // Check if profile is frozen
+    const storage = await chrome.storage.local.get(['profiles', 'activeProfileId', 'freezeProfile']);
+    const isFrozen = storage.freezeProfile === true;
+
+    if (!isFrozen && storage.profiles && storage.activeProfileId) {
+      const profiles = storage.profiles;
+      const activeProfile = profiles.find(p => p.id === storage.activeProfileId);
+      
+      if (activeProfile) {
+        // Update profile data
+        activeProfile.totalVideosWatched++;
+        activeProfile.watchHistory = [
+          {
+            videoId: videoData.videoId,
+            title: videoData.title,
+            url: videoData.url,
+            watchTime: videoData.watchTime,
+            category: videoData.category,
+            channel: videoData.channel,
+            timestamp: videoData.timestamp
+          },
+          ...(activeProfile.watchHistory || []).slice(0, 49) // Keep last 50 videos
+        ];
+
+        // Update preferred categories and channels
+        if (!activeProfile.preferredCategories.includes(videoData.category)) {
+          activeProfile.preferredCategories.push(videoData.category);
+        }
+        if (!activeProfile.preferredChannels.includes(videoData.channel)) {
+          activeProfile.preferredChannels.push(videoData.channel);
+        }
+
+        // Update average watch time
+        const totalWatchTime = activeProfile.watchHistory.reduce((sum, v) => sum + v.watchTime, 0);
+        activeProfile.averageWatchTime = totalWatchTime / activeProfile.watchHistory.length;
+
+        // Save updated profile
+        const updatedProfiles = profiles.map(p => p.id === activeProfile.id ? activeProfile : p);
+        await chrome.storage.local.set({ profiles: updatedProfiles });
+        
+        // Notify background script
+        chrome.runtime.sendMessage({
+          type: 'PROFILE_UPDATED',
+          profile: activeProfile,
+          videoData: videoData
+        });
+      }
+    }
+
     let adSkipInterval;
     if (this.currentPreset.advancedOptions?.skipAds) {
       adSkipInterval = setInterval(() => {
         // Try different ad skip button selectors
         const skipSelectors = [
-          // Main skip button container
+          // New YouTube skip button text
+          '.ytp-skip-ad-button__text',
+          // Skip button container
           '.ytp-ad-skip-button',
           '.ytp-ad-skip-button-modern',
           '.ytp-skip-ad-button',
-          // Skip button text (click parent)
-          '.ytp-skip-ad-button__text',
           // Button with specific text
           'button[aria-label="Skip Ad"]',
           'button[aria-label="Werbung überspringen"]',
@@ -130,6 +190,17 @@ async function watchVideo(duration) {
                   // Also try to focus and press Enter
                   button.focus();
                   button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+                  
+                  // Try to click the parent if it's a text element
+                  if (element.classList.contains('ytp-skip-ad-button__text')) {
+                    const parentButton = element.closest('.ytp-skip-ad-button');
+                    if (parentButton) {
+                      parentButton.click();
+                      parentButton.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                      parentButton.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                      parentButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                    }
+                  }
                   
                   console.log('✅ Ad skip attempted with:', selector);
                   break;
