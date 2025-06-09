@@ -3,17 +3,48 @@ console.log('🎯 YouTube Algorithm Trainer content script starting...');
 
 class YouTubeAlgorithmTrainer {
   constructor() {
+    // Bind all required functions
+    this.performSearch = window.performSearch.bind(this);
+    this.watchRecommendedVideos = window.watchRecommendedVideos.bind(this);
+    this.watchVideo = window.watchVideo.bind(this);
+    this.likeVideo = window.likeVideo.bind(this);
+    this.subscribeToChannel = window.subscribeToChannel.bind(this);
+    this.delay = window.delay.bind(this);
+    this.humanDelay = window.humanDelay.bind(this);
+    this.waitForElement = window.waitForElement.bind(this);
+    this.typeText = window.typeText.bind(this);
+    this.calculateVideoScore = window.calculateVideoScore.bind(this);
+    this.extractRecommendations = window.extractRecommendations.bind(this);
+    this.generateCategories = window.generateCategories.bind(this);
+    this.calculateProfileScore = window.calculateProfileScore.bind(this);
+    this.sendResults = window.sendResults.bind(this);
+    this.sendProgress = window.sendProgress.bind(this);
+    this.sendError = window.sendError.bind(this);
+
+    // Initialize state
     this.isTraining = false;
     this.currentPreset = null;
-    this.progress = 0;
-    this.startTime = null;
+    this.watchedVideoIds = [];
     this.videosWatched = 0;
     this.searchesPerformed = 0;
-    this.recommendations = [];
-    this.watchedVideoIds = [];
-    
+    this.startTime = null;
+    this.adDetector = window.adDetector;
+
+    // Start alive signal
+    this.startAliveSignal();
+
     // Initialize immediately
     this.init();
+  }
+
+  startAliveSignal() {
+    // Send initial alive signal
+    this.sendAliveSignal();
+    
+    // Set up interval for regular signals
+    setInterval(() => {
+      this.sendAliveSignal();
+    }, 3000);
   }
 
   async init() {
@@ -28,13 +59,6 @@ class YouTubeAlgorithmTrainer {
     
     this.setupMessageListeners();
 
-    // Bind helper functions to this context
-    this.sendProgress = sendProgress.bind(this);
-    this.sendError = sendError.bind(this);
-    this.watchVideo = watchVideo.bind(this);
-    this.likeVideo = likeVideo.bind(this);
-    this.subscribeToChannel = subscribeToChannel.bind(this);
-    
     // Check if we need to restore training state
     try {
       const storage = await chrome.storage.local.get(['pendingTraining', 'currentPreset']);
@@ -136,6 +160,56 @@ class YouTubeAlgorithmTrainer {
     }
   }
 
+  async searchPreferredChannels() {
+    if (!this.currentPreset.channelPreferences) return;
+    
+    console.log('🔍 Searching for preferred channels...');
+    
+    for (const pref of this.currentPreset.channelPreferences) {
+      if (pref.action === 'prioritize' || pref.action === 'subscribe') {
+        try {
+          // Search for the channel
+          await performSearch.call(this, pref.channelName);
+          await delay(2000);
+          
+          // Click on the first channel result
+          const channelResults = document.querySelectorAll('ytd-channel-renderer');
+          if (channelResults.length > 0) {
+            const channelLink = channelResults[0].querySelector('a#main-link');
+            if (channelLink) {
+              channelLink.click();
+              await delay(3000);
+              
+              // Watch a few videos from the channel
+              const channelVideos = document.querySelectorAll('ytd-rich-item-renderer');
+              const videosToWatch = Math.min(2, channelVideos.length);
+              
+              for (let i = 0; i < videosToWatch; i++) {
+                if (!this.isTraining) break;
+                
+                const video = channelVideos[i];
+                const videoLink = video.querySelector('a#video-title');
+                if (videoLink) {
+                  videoLink.click();
+                  await delay(3000);
+                  await this.watchVideo(60); // Watch for 60 seconds
+                  window.history.back();
+                  await delay(2000);
+                }
+              }
+              
+              // Go back to homepage
+              window.location.href = 'https://www.youtube.com';
+              await delay(3000);
+            }
+          }
+        } catch (error) {
+          console.error(`Error searching for channel ${pref.channelName}:`, error);
+        }
+      }
+    }
+  }
+
   async startTraining(preset) {
     if (this.isTraining) {
       console.log('⚠️ Training already in progress');
@@ -166,7 +240,8 @@ class YouTubeAlgorithmTrainer {
         window.location.href = 'https://www.youtube.com';
         return; // Will restart when page loads
       }
-      // Warte auf Suchfeld (wird jetzt in performSearch gemacht)
+      
+      // Warte auf Suchfeld
       this.sendProgress(12, 'Warte auf Suchfeld...');
 
       // Step 2: Clear history if requested
@@ -180,22 +255,50 @@ class YouTubeAlgorithmTrainer {
         await delay(2000);
       }
       
+      // NEW STEP: Search for preferred channels first
+      this.sendProgress(20, 'Searching for preferred channels...');
+      await this.searchPreferredChannels();
+      
       // Step 3: Perform searches and watch videos
       const searches = preset.searches || [];
       const totalSteps = searches.length;
+      let timeLimitReached = false;
       
       for (let i = 0; i < totalSteps; i++) {
         if (!this.isTraining) break;
         
         const search = searches[i];
+        // Linear progress from 20% to 80%
         const stepProgress = 20 + (i / totalSteps) * 60;
         
         try {
+          // Check time before starting new search
+          const elapsedTime = (Date.now() - this.startTime) / (1000 * 60); // in minutes
+          if (elapsedTime >= preset.trainingDuration) {
+            console.log('⏱️ Training duration reached, completing...');
+            timeLimitReached = true;
+            // Set progress to 80% when time limit is reached
+            this.sendProgress(80, 'Time limit reached, completing training...');
+            break;
+          }
+
           await performSearch.call(this, search.query);
+          // Search is 30% of the step
           this.sendProgress(stepProgress, `Searching: "${search.query}"`);
           
           await watchRecommendedVideos.call(this, search.frequency || 2, search.duration || 60);
-          this.sendProgress(stepProgress + 10, `Watching videos for: "${search.query}"`);
+          // Watching videos is 70% of the step
+          this.sendProgress(stepProgress + (60 / totalSteps * 0.7), `Watched videos for: "${search.query}"`);
+          
+          // Check time again after watching videos
+          const newElapsedTime = (Date.now() - this.startTime) / (1000 * 60);
+          if (newElapsedTime >= preset.trainingDuration) {
+            console.log('⏱️ Training duration reached after watching videos, completing...');
+            timeLimitReached = true;
+            // Set progress to 80% when time limit is reached
+            this.sendProgress(80, 'Time limit reached, completing training...');
+            break;
+          }
           
           await humanDelay();
           
@@ -205,12 +308,45 @@ class YouTubeAlgorithmTrainer {
         }
       }
       
-      // Step 4: Extract final recommendations
-      this.sendProgress(90, 'Analyzing recommendations...');
-      const finalRecommendations = await extractRecommendations.call(this);
+      // Step 4: Extract final recommendations (5% of total)
+      this.sendProgress(85, 'Analyzing recommendations...');
       
-      // Step 5: Complete
-      this.sendProgress(100, 'Training completed!');
+      // Extract recommendations from the page
+      const finalRecommendations = [];
+      try {
+        // Wait for recommendations to load
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Get all video elements
+        const videoElements = document.querySelectorAll('ytd-video-renderer, ytd-rich-item-renderer');
+        
+        for (const element of videoElements) {
+          try {
+            const titleElement = element.querySelector('#video-title');
+            const channelElement = element.querySelector('#channel-name');
+            const descriptionElement = element.querySelector('#description-text');
+            
+            if (titleElement && channelElement) {
+              finalRecommendations.push({
+                title: titleElement.textContent.trim(),
+                channel: channelElement.textContent.trim(),
+                description: descriptionElement ? descriptionElement.textContent.trim() : '',
+                url: titleElement.href || '',
+                position: finalRecommendations.length + 1
+              });
+            }
+          } catch (e) {
+            console.log('Failed to extract video details:', e);
+          }
+        }
+        
+        console.log('📊 Extracted recommendations:', finalRecommendations.length);
+      } catch (error) {
+        console.error('Failed to extract recommendations:', error);
+      }
+      
+      // Step 5: Complete (final 15%)
+      this.sendProgress(100, timeLimitReached ? 'Training completed (time limit reached)!' : 'Training completed!');
       
       const results = {
         preset: preset.name,
@@ -224,7 +360,8 @@ class YouTubeAlgorithmTrainer {
         categories: generateCategories(finalRecommendations)
       };
       
-      sendResults(results);
+      // Ensure we send results before stopping
+      await sendResults(results);
       
       console.log('✅ Training completed successfully!', results);
       

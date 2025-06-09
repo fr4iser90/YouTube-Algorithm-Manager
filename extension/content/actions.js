@@ -1,3 +1,26 @@
+// YouTube Actions Module
+console.log('🎯 Actions module loaded');
+
+async function waitForElement(selector, timeout = 5000) {
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < timeout) {
+    const element = document.querySelector(selector);
+    if (element) return element;
+    await delay(100);
+  }
+  
+  throw new Error(`Element ${selector} not found after ${timeout}ms`);
+}
+
+async function typeText(element, text) {
+  for (const char of text) {
+    element.value += char;
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+    await delay(Math.random() * 100 + 50); // Random delay between 50-150ms
+  }
+}
+
 async function performSearch(query) {
   console.log(`🔍 Searching for: "${query}"`);
   try {
@@ -145,104 +168,7 @@ async function watchVideo(duration) {
 
     let adSkipInterval;
     if (this.currentPreset.advancedOptions?.skipAds) {
-      adSkipInterval = setInterval(() => {
-        // Try different ad skip button selectors
-        const skipSelectors = [
-          // New YouTube skip button text
-          '.ytp-skip-ad-button__text',
-          // Skip button container
-          '.ytp-ad-skip-button',
-          '.ytp-ad-skip-button-modern',
-          '.ytp-skip-ad-button',
-          // Button with specific text
-          'button[aria-label="Skip Ad"]',
-          'button[aria-label="Werbung überspringen"]',
-          'button[aria-label="Skip"]',
-          'button[aria-label="Überspringen"]',
-          // Additional button classes
-          'button.ytp-ad-skip-button',
-          'button.ytp-ad-skip-button-container',
-          'div.ytp-ad-skip-button-container button',
-          // Generic skip buttons
-          'button[aria-label*="Skip"]',
-          'button[aria-label*="Überspringen"]',
-          // Ad overlay close buttons
-          '.ytp-ad-overlay-close-button',
-          'button[aria-label="Close ad"]',
-          'button[aria-label="Werbung schließen"]'
-        ];
-
-        // Try to find and click any skip button
-        for (const selector of skipSelectors) {
-          const elements = document.querySelectorAll(selector);
-          for (const element of elements) {
-            if (element.offsetParent !== null) { // Check if element is visible
-              try {
-                // If we found the text element, click its parent button
-                const button = element.closest('button') || element;
-                if (button) {
-                  // Try multiple click methods
-                  button.click();
-                  button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                  button.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                  button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                  
-                  // Also try to focus and press Enter
-                  button.focus();
-                  button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-                  
-                  // Try to click the parent if it's a text element
-                  if (element.classList.contains('ytp-skip-ad-button__text')) {
-                    const parentButton = element.closest('.ytp-skip-ad-button');
-                    if (parentButton) {
-                      parentButton.click();
-                      parentButton.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                      parentButton.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                      parentButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                    }
-                  }
-                  
-                  console.log('✅ Ad skip attempted with:', selector);
-                  break;
-                }
-              } catch (err) {
-                console.log('Skip attempt failed:', err);
-              }
-            }
-          }
-        }
-
-        // Also try to skip video ads by seeking
-        if (video.duration && video.duration > 0) {
-          // For short videos (likely ads)
-          if (video.duration < 30) {
-            try {
-              video.currentTime = video.duration - 0.1;
-              console.log('✅ Tried to seek to end of short video');
-            } catch (err) {
-              console.log('Could not seek video:', err);
-            }
-          }
-          
-          // For longer ads, try to skip to last 5 seconds
-          if (video.duration > 30 && video.duration < 60) {
-            try {
-              video.currentTime = video.duration - 5;
-              console.log('✅ Tried to skip to last 5 seconds');
-            } catch (err) {
-              console.log('Could not seek video:', err);
-            }
-          }
-        }
-
-        // Try to mute and speed up ads
-        if (video.muted === false) {
-          video.muted = true;
-        }
-        if (video.playbackRate < 2) {
-          video.playbackRate = 2;
-        }
-      }, 500); // Check every 500ms
+      adSkipInterval = window.adDetector.startAdDetection(video);
     }
     
     const watchTime = Math.min(duration, 120) * 1000;
@@ -290,3 +216,25 @@ async function subscribeToChannel() {
     console.log('Could not subscribe to channel:', error);
   }
 }
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function humanDelay() {
+  // Random delay between 2-5 seconds to simulate human behavior
+  const delay = Math.random() * 3000 + 2000;
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+// Make functions globally available
+window.performSearch = performSearch;
+window.watchRecommendedVideos = watchRecommendedVideos;
+window.watchVideo = watchVideo;
+window.likeVideo = likeVideo;
+window.subscribeToChannel = subscribeToChannel;
+window.waitForElement = waitForElement;
+window.typeText = typeText;
+window.delay = delay;
+window.humanDelay = humanDelay;
+

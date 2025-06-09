@@ -38,9 +38,11 @@
       "exclude_matches": ["*://*.youtube.com/feed/history"],
       "js": [
           "content/utils.js",
+          "content/helpers.js",
           "content/watch-score.js",
+          "content/ad-detection.js",
+          "content/warmup.js",
           "content/actions.js",
-          "content/helpers.js", 
           "content/pre-training-analyzer.js",
           "content/youtube-trainer.js"
       ],

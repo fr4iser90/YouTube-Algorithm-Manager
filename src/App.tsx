@@ -174,6 +174,10 @@ function App() {
         setSavedProfiles(prev => 
           prev.map(p => p.id === event.data.profile.id ? event.data.profile : p)
         );
+        // Also update current profile if it's the active one
+        setCurrentProfile(prev => 
+          prev?.id === event.data.profile.id ? event.data.profile : prev
+        );
       }
     };
     

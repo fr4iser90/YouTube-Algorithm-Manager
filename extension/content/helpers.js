@@ -118,3 +118,51 @@ function sendProgress(progress, message) {
     console.error('❌ Error sending progress:', error);
   }
 }
+
+async function extractRecommendations() {
+  try {
+    console.log('🔍 Extracting recommendations...');
+    
+    // Wait for recommendations to load
+    await delay(2000);
+    
+    const videos = [];
+    document.querySelectorAll('#video-title').forEach(titleElement => {
+      const container = titleElement.closest(
+        'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer'
+      );
+
+      if (container && titleElement.textContent && titleElement.textContent.trim()) {
+        const channelContainer = container.querySelector('ytd-channel-name');
+        let channelName = 'Unknown Channel';
+        if (channelContainer) {
+          const channelLink = channelContainer.querySelector('a');
+          channelName = (channelLink || channelContainer).textContent.trim();
+        }
+        
+        const descriptionElement = container.querySelector('#description-text, .metadata-snippet-text');
+        const categoryElement = container.querySelector('#metadata-line span:first-child');
+
+        const videoData = {
+          title: titleElement.textContent.trim(),
+          channel: channelName,
+          description: descriptionElement ? descriptionElement.textContent.trim() : '',
+          category: categoryElement ? categoryElement.textContent.trim() : 'unknown',
+          url: titleElement.href,
+          position: videos.length + 1
+        };
+
+        if (!videos.some(v => v.title === videoData.title)) {
+          videos.push(videoData);
+        }
+      }
+    });
+
+    console.log(`✅ Extracted ${videos.length} recommendations`);
+    return videos;
+    
+  } catch (error) {
+    console.error('❌ Error extracting recommendations:', error);
+    return [];
+  }
+}
