@@ -15,13 +15,14 @@ import { useLocalStorage, dateReviver } from './hooks/useLocalStorage';
 /* Dynamically load presets from GitHub manifest */
 import { TrainingPreset, AlgorithmState, BrowserProfile } from './types';
 import { Plus, Filter, Search, Settings as SettingsIcon, Brain, Shield, Chrome } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileController } from './components/ProfileController';
 import { ProfileManager } from './components/ProfileManager';
 import { AlgorithmController } from './components/AlgorithmController';
 import { TrainingController } from './components/TrainingController';
 import { BrowserSettings } from './components/BrowserSettings';
 import { SecurityMonitor } from './components/SecurityMonitor';
+import { ProfileCreationModal } from './components/ProfileCreationModal';
 
 function App() {
   const [presets, setPresets, presetsLoading] = useLocalStorage<TrainingPreset[]>('youtube-presets', []);
@@ -42,6 +43,8 @@ function App() {
   const [activeProfileId, setactiveProfileId] = useState<string | null>(null);
   const [extensionTrainingActive, setExtensionTrainingActive] = useState(false);
   const extensionBridgeRef = useRef<ExtensionBridgeHandle>(null);
+  const [showProfileCreate, setShowProfileCreate] = useState(false);
+  const [pendingTrainingPreset, setPendingTrainingPreset] = useState<TrainingPreset | null>(null);
 
   const loadProfiles = useCallback(async () => {
     try {
@@ -160,12 +163,67 @@ function App() {
     }
   };
 
-  const handleTrainPreset = async (preset: TrainingPreset) => {
-    if (extensionBridgeRef.current) {
-      const success = await extensionBridgeRef.current.startTraining(preset);
-      if (success) {
-        setExtensionTrainingActive(true);
+  // Initialize extension bridge
+  useEffect(() => {
+    // Listen for extension messages
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'YT_TRAINER_STATUS') {
+        setExtensionTrainingActive(event.data.isTraining);
       }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const handleTrainPreset = async (preset: TrainingPreset) => {
+    console.log('🎯 Starting training for preset:', preset.name);
+    
+    // Prüfen ob ein Profil aktiv ist
+    const activeProfile = savedProfiles.find(p => p.isActive);
+    
+    if (!activeProfile) {
+      console.log('👤 No active profile, opening creation modal');
+      // Kein Profil aktiv -> Modal öffnen
+      setPendingTrainingPreset(preset);
+      setShowProfileCreate(true);
+      return;
+    }
+
+    console.log('🚀 Starting training with profile:', activeProfile.name);
+    // Profil aktiv -> Training starten
+    if (extensionBridgeRef.current) {
+      try {
+        const success = await extensionBridgeRef.current.startTraining(preset);
+        if (success) {
+          console.log('✅ Training started successfully');
+          setExtensionTrainingActive(true);
+        } else {
+          console.error('❌ Failed to start training');
+        }
+      } catch (err) {
+        console.error('❌ Error starting training:', err);
+      }
+    } else {
+      console.error('❌ Extension bridge not initialized');
+    }
+  };
+
+  const handleProfileSave = async (profile: BrowserProfile) => {
+    // Profil speichern
+    const updatedProfiles = [...savedProfiles, profile];
+    setSavedProfiles(updatedProfiles);
+    setShowProfileCreate(false);
+
+    // Wenn ein Training aussteht -> Starten
+    if (pendingTrainingPreset) {
+      if (extensionBridgeRef.current) {
+        const success = await extensionBridgeRef.current.startTraining(pendingTrainingPreset);
+        if (success) {
+          setExtensionTrainingActive(true);
+        }
+      }
+      setPendingTrainingPreset(null);
     }
   };
 
@@ -632,6 +690,19 @@ function App() {
         }}
         onSave={handleSavePreset}
       />
+
+      {/* Profile Creation Modal */}
+      <AnimatePresence>
+        {showProfileCreate && (
+          <ProfileCreationModal
+            isOpen={showProfileCreate}
+            onClose={() => setShowProfileCreate(false)}
+            onSave={handleProfileSave}
+            currentPreset={pendingTrainingPreset || undefined}
+            currentAlgorithmState={currentAlgorithmState}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,15 +1,17 @@
+import { AlgorithmState } from './algorithm';
+
 export interface BrowserProfile {
   id: string;
   name: string;
   description: string;
-  // Browser-Daten
+  // Browser data
   cookies: string;
   localStorage: string;
   sessionStorage: string;
   userAgent: string;
   viewport: { width: number; height: number };
   
-  // Zeitstempel
+  // Timestamps
   createdAt: Date;
   lastUsed: Date;
   lastTrainingDate?: Date;
@@ -18,17 +20,17 @@ export interface BrowserProfile {
   isActive: boolean;
   tags: string[];
   
-  // Anonyme Interaktionen & Statistiken
+  // Anonymous interactions & statistics
   totalVideosWatched: number;
   totalSearches: number;
   trainingHours: number;
-  averageWatchTime: number; // in Minuten
+  averageWatchTime: number; // in minutes
   
-  // Präferenzen (basierend auf Watch-History)
-  preferredCategories: string[];    // Häufig angesehene Kategorien
-  preferredChannels: string[];      // Häufig angesehene Kanäle
-  preferredKeywords: string[];      // Häufig gesuchte Keywords
-  watchHistory: {                   // Letzte Videos
+  // Preferences (based on watch history)
+  preferredCategories: string[];    // Frequently watched categories
+  preferredChannels: string[];      // Frequently watched channels
+  preferredKeywords: string[];      // Frequently searched keywords
+  watchHistory: {                   // Recent videos
     videoId: string;
     watchTime: number;
     category: string;
@@ -36,9 +38,17 @@ export interface BrowserProfile {
     timestamp: Date;
   }[];
   
-  // Vermiedene Inhalte
-  avoidedChannels: string[];        // Kanäle die vermieden werden
-  avoidedKeywords: string[];        // Keywords die vermieden werden
+  // Avoided content
+  avoidedChannels: string[];        // Channels to avoid
+  avoidedKeywords: string[];        // Keywords to avoid
+
+  // New properties
+  algorithmState?: AlgorithmState;  // Current algorithm state
+  profileStrength: number;         // Profile strength in percentage
+  color: string;                   // Profile color
+  language: string;                // Profile language
+  region: string;                  // Profile region
+  category: string;                // Profile category
 }
 
 export interface ProfileSnapshot {
@@ -50,7 +60,7 @@ export interface ProfileSnapshot {
   localStorage: string;
   createdAt: Date;
   lastUsed: Date;
-  // Momentaufnahme der Präferenzen
+  // Snapshot of preferences
   preferredCategories: string[];
   preferredChannels: string[];
   preferredKeywords: string[];
