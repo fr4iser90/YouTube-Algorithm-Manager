@@ -1,7 +1,7 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Chrome, Download, CheckCircle, AlertTriangle, Zap, Play, Square, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BubblePreset } from '../types';
+import { TrainingPreset } from '../types';
 
 interface ExtensionStatus {
   isInstalled: boolean;
@@ -21,13 +21,13 @@ interface TrainingProgress {
 }
 
 interface ExtensionBridgeProps {
-  onTrainingStart?: (preset: BubblePreset) => void;
+  onTrainingStart?: (preset: TrainingPreset) => void;
   onTrainingComplete?: (results: any) => void;
   onTrainingProgress?: (progress: TrainingProgress) => void;
 }
 
 export interface ExtensionBridgeHandle {
-  startTraining: (preset: BubblePreset) => Promise<boolean>;
+  startTraining: (preset: TrainingPreset) => Promise<boolean>;
   stopTraining: () => Promise<void>;
   openProfileManager: () => void;
 }
@@ -116,7 +116,7 @@ export const ExtensionBridge = forwardRef<ExtensionBridgeHandle, ExtensionBridge
   };
 
 
-  const startTrainingWithExtension = async (preset: BubblePreset) => {
+  const startTrainingWithExtension = async (preset: TrainingPreset) => {
     if (!extensionStatus.isInstalled) {
       setShowInstallGuide(true);
       return false;

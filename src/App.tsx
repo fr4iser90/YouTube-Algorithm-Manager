@@ -4,7 +4,6 @@ import { PresetCard } from './components/PresetCard';
 import { PresetEditor } from './components/PresetEditor';
 import { TrainingProgress } from './components/TrainingProgress';
 import { AlgorithmAnalysis } from './components/AlgorithmAnalysis';
-import { BubbleProfileController } from './components/BubbleProfileController';
 import { BrowserController } from './components/BrowserController';
 import { YouTubeAutomation } from './components/YouTubeAutomation';
 import { RealTimeAnalytics } from './components/RealTimeAnalytics';
@@ -14,22 +13,29 @@ import { PreTrainingAnalysis } from './components/PreTrainingAnalysis';
 import { ExtensionBridge, ExtensionBridgeHandle } from './components/ExtensionBridge';
 import { useLocalStorage, dateReviver } from './hooks/useLocalStorage';
 /* Dynamically load presets from GitHub manifest */
-import { BubblePreset, TrainingProfile, AlgorithmState, SavedProfile } from './types';
+import { TrainingPreset, AlgorithmState, BrowserProfile } from './types';
 import { Plus, Filter, Search, Settings as SettingsIcon, Brain, Shield, Chrome } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ProfileController } from './components/ProfileController';
+import { ProfileManager } from './components/ProfileManager';
+import { AlgorithmController } from './components/AlgorithmController';
+import { TrainingController } from './components/TrainingController';
+import { BrowserSettings } from './components/BrowserSettings';
+import { SecurityMonitor } from './components/SecurityMonitor';
 
 function App() {
-  const [presets, setPresets, presetsLoading] = useLocalStorage<BubblePreset[]>('youtube-presets', []);
-  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
-const [profilesLoading, setProfilesLoading] = useState(true);
+  const [presets, setPresets, presetsLoading] = useLocalStorage<TrainingPreset[]>('youtube-presets', []);
+  const [savedProfiles, setSavedProfiles] = useState<BrowserProfile[]>([]);
+  const [profilesLoading, setProfilesLoading] = useState(true);
   const [algorithmHistory, setAlgorithmHistory, historyLoading] = useLocalStorage<AlgorithmState[]>('algorithm-history', []);
   const [browserSettings, setBrowserSettings, settingsLoading] = useLocalStorage<any>('browser-settings', {});
-  const [currentProfile, setcurrentProfile] = useState<TrainingProfile | null>(null);
+  const [currentProfile, setCurrentProfile] = useState<BrowserProfile | null>(null);
+  const [currentAlgorithmState, setCurrentAlgorithmState] = useState<AlgorithmState | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [languageFilter, setLanguageFilter] = useState<string>('all');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingPreset, setEditingPreset] = useState<BubblePreset | undefined>(undefined);
+  const [editingPreset, setEditingPreset] = useState<TrainingPreset | undefined>(undefined);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [anonymousConfig, setAnonymousConfig] = useState<any>({});
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -95,7 +101,7 @@ const [profilesLoading, setProfilesLoading] = useState(true);
         if (savedProfiles) {
           const activeProfile = savedProfiles.find((s: any) => s.isActive);
           
-          if (activeProfile && browserSettings.bubbleLoadStrategy === 'quick') {
+          if (activeProfile && browserSettings.profileLoadStrategy === 'quick') {
             console.log('🚀 Auto-loading active profile:', activeProfile.name);
             loadProfileData(activeProfile);
           }
@@ -108,7 +114,7 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     // Auto-load after a short delay to ensure components are ready
     const timer = setTimeout(autoLoadProfile, 1000);
     return () => clearTimeout(timer);
-  }, [browserSettings.bubbleLoadStrategy, savedProfiles, profilesLoading]);
+  }, [browserSettings.profileLoadStrategy, savedProfiles, profilesLoading]);
 
   // Auto-backup profiles on change
   useEffect(() => {
@@ -128,33 +134,33 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     }
   }, [presets, browserSettings.autoBackup]);
 
-  const loadProfileData = (profile: any) => {
+  const loadProfileData = (profile: BrowserProfile) => {
     try {
-      // Restore algorithm state
-      if (profile.algorithmState) {
-        setAlgorithmHistory(prev => {
-          const filtered = prev.filter(state => state.timestamp !== profile.algorithmState.timestamp);
-          return [...filtered, profile.algorithmState];
-        });
-      }
-
       // Set active profile
-      setactiveProfileId(profile.id);
+      setCurrentProfile(profile);
       
-      // Simulate quick bubble loading
-      console.log(`✅ Profile "${profile.name}" loaded instantly with ${profile.bubbleStrength}% bubble strength`);
-      
-      // Update recommendations if available
-      if (profile.algorithmState?.recommendations) {
-        setRecommendations(profile.algorithmState.recommendations);
-      }
+      // Load associated algorithm state if available
+      const profileAlgorithmState = algorithmHistory.find(state => state.profileId === profile.id);
+      setCurrentAlgorithmState(profileAlgorithmState);
 
-    } catch (error) {
-      console.error('Failed to load profile data:', error);
+      // Update last used timestamp
+      const updatedProfile = {
+        ...profile,
+        lastUsed: new Date()
+      };
+      
+      // Update saved profiles
+      setSavedProfiles(prev => 
+        prev.map(p => p.id === profile.id ? updatedProfile : p)
+      );
+
+      console.log('✅ Profile loaded:', profile.name);
+    } catch (err) {
+      console.error('❌ Failed to load profile:', err);
     }
   };
 
-  const handleTrainPreset = async (preset: BubblePreset) => {
+  const handleTrainPreset = async (preset: TrainingPreset) => {
     if (extensionBridgeRef.current) {
       const success = await extensionBridgeRef.current.startTraining(preset);
       if (success) {
@@ -163,7 +169,7 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     }
   };
 
-  const startExtensionTraining = async (preset: BubblePreset): Promise<boolean> => {
+  const startExtensionTraining = async (preset: TrainingPreset): Promise<boolean> => {
     try {
       // Save preset for extension
       localStorage.setItem('yt-trainer-command', JSON.stringify({
@@ -197,8 +203,8 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     setPresets(prev => prev.filter(p => p.id !== id));
   };
 
-  const handleDuplicatePreset = (preset: BubblePreset) => {
-    const duplicated: BubblePreset = {
+  const handleDuplicatePreset = (preset: TrainingPreset) => {
+    const duplicated: TrainingPreset = {
       ...preset,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name: `${preset.name} (Copy)`,
@@ -208,7 +214,7 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     setPresets(prev => [...prev, duplicated]);
   };
 
-  const handleEditPreset = (preset: BubblePreset) => {
+  const handleEditPreset = (preset: TrainingPreset) => {
     setEditingPreset(preset);
     setIsEditorOpen(true);
   };
@@ -224,7 +230,7 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     }
   };
 
-  const handleSavePreset = (preset: BubblePreset) => {
+  const handleSavePreset = (preset: TrainingPreset) => {
     if (editingPreset) {
       // Update existing preset
       setPresets(prev => prev.map(p => p.id === preset.id ? preset : p));
@@ -241,11 +247,11 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     }
   };
 
-  const handleLoadProfile = (profile: any) => {
+  const handleLoadProfile = (profile: BrowserProfile) => {
     loadProfileData(profile);
   };
 
-  const handleExtensionTrainingStart = (preset: BubblePreset) => {
+  const handleExtensionTrainingStart = (preset: TrainingPreset) => {
     setExtensionTrainingActive(true);
     console.log('🎯 Extension training started for:', preset.name);
   };
@@ -257,9 +263,8 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     const algorithmState: AlgorithmState = {
       timestamp: new Date(),
       recommendations: results.recommendations || [],
-      categories: results.categories || [],
       sentiment: 'positive',
-      bubbleScore: results.bubbleScore || 0,
+      profileScore: results.profileScore || 0,
       language: results.language || 'en',
       region: results.region || 'US',
       blockedChannels: [],
@@ -333,7 +338,6 @@ const [profilesLoading, setProfilesLoading] = useState(true);
     return matchesSearch && matchesCategory && matchesLanguage;
   });
 
-  const currentAlgorithmState = algorithmHistory[algorithmHistory.length - 1];
   const availableLanguages = Array.from(new Set(presets.map(p => p.language || 'en')));
   const currentPreset = currentProfile ? presets.find(p => p.id === currentProfile.presetId) : undefined;
 
@@ -372,7 +376,7 @@ const [profilesLoading, setProfilesLoading] = useState(true);
               <div>
                 <h3 className="text-green-300 font-medium">Profile Active</h3>
                 <p className="text-green-200 text-sm">
-                  Bubble loaded instantly with persistent cookies. Ready for training or browsing.
+                  Profile loaded instantly with persistent cookies. Ready for training or browsing.
                 </p>
               </div>
             </div>
@@ -502,9 +506,6 @@ const [profilesLoading, setProfilesLoading] = useState(true);
               currentState={currentAlgorithmState}
               historicalData={algorithmHistory}
             />
-          </div>
-          <div>
-            <BubbleProfileController />
           </div>
         </div>
 

@@ -1,26 +1,31 @@
 import React, { useState } from 'react';
-import { Brain, Download, Upload, Settings, Save, Shield, Eye, EyeOff, AlertTriangle, CheckCircle, X, Chrome, PlaySquare } from 'lucide-react';
-import { BubbleProfileManager } from './BubbleProfileManager';
-import { BubblePreset, AlgorithmState } from '../types';
+import { Brain, Download, Upload, Settings, Save, Shield, Eye, EyeOff, AlertTriangle, CheckCircle, X, Chrome, PlaySquare, Search, Filter, Plus, Edit2, Trash2 } from 'lucide-react';
+import { ProfileManager } from './ProfileManager';
+import { TrainingPreset, AlgorithmState, BrowserProfile } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrainingManager } from './TrainingManager';
+import { ProfileSelectModal } from './ProfileSelectModal';
 
 interface HeaderProps {
+  onSearch: (query: string) => void;
+  onCategoryFilter: (category: string) => void;
+  onLanguageFilter: (language: string) => void;
+  onShowSettings: () => void;
+  presets: TrainingPreset[];
+  onCreate: () => void;
+  onEdit: (preset: TrainingPreset) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (preset: TrainingPreset) => void;
+  onTrain: (preset: TrainingPreset) => void;
   onExport: () => void;
   onImport: () => void;
   onSettings: () => void;
-  currentPreset?: BubblePreset;
+  currentPreset?: TrainingPreset;
   currentAlgorithmState?: AlgorithmState;
-  onLoadProfile: (profile: any) => void;
+  onLoadProfile: (profile: BrowserProfile) => void;
   onCreateProfile: () => void;
-  savedProfiles: any[];
-  setSavedProfiles: (profiles: any[]) => void;
-  presets: any[];
-  onCreate: () => void;
-  onEdit: (preset: any) => void;
-  onDelete: (id: string) => void;
-  onDuplicate: (preset: any) => void;
-  onTrain: (preset: any) => void;
+  savedProfiles: BrowserProfile[];
+  setSavedProfiles: React.Dispatch<React.SetStateAction<BrowserProfile[]>>;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
 }
@@ -34,9 +39,19 @@ interface SecurityCheck {
   extensionInstalled: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  onExport, 
-  onImport, 
+export const Header: React.FC<HeaderProps> = ({
+  onSearch,
+  onCategoryFilter,
+  onLanguageFilter,
+  onShowSettings,
+  presets,
+  onCreate,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onTrain,
+  onExport,
+  onImport,
   onSettings,
   currentPreset,
   currentAlgorithmState,
@@ -44,18 +59,14 @@ export const Header: React.FC<HeaderProps> = ({
   onCreateProfile,
   savedProfiles,
   setSavedProfiles,
-  presets,
-  onCreate,
-  onEdit,
-  onDelete,
-  onDuplicate,
-  onTrain,
   searchQuery,
   setSearchQuery
 }) => {
   const [isProfileManagerOpen, setIsProfileManagerOpen] = useState(false);
   const [isTrainingManagerOpen, setIsTrainingManagerOpen] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(false);
+  const [showProfileSelect, setShowProfileSelect] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
 
   // Security Check - Extension focused
   const performSecurityCheck = (): SecurityCheck => {
@@ -138,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
       
       if (profileCookies) {
         youtubeUrl.searchParams.set('profile_restore', 'true');
-        youtubeUrl.searchParams.set('bubble_mode', 'anonymous');
+        youtubeUrl.searchParams.set('profile_mode', 'anonymous');
       }
 
       // Open YouTube with profile data
@@ -148,7 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
         setTimeout(() => {
           try {
             console.log('🎯 Profile cookies injected into anonymous window');
-            console.log('✅ Anonymous browsing with loaded bubble profile active!');
+            console.log('✅ Anonymous browsing with loaded profile active!');
           } catch (error) {
             console.log('⚠️ Cookie injection failed, but window opened');
           }
@@ -176,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({
           
           const youtubeUrl = new URL('https://www.youtube.com');
           youtubeUrl.searchParams.set('profile_id', activeProfile.id);
-          youtubeUrl.searchParams.set('bubble_strength', activeProfile.bubbleStrength.toString());
+          youtubeUrl.searchParams.set('profile_strength', activeProfile.profileStrength.toString());
           
           window.open(youtubeUrl.toString(), '_blank');
           return;
@@ -190,6 +201,36 @@ export const Header: React.FC<HeaderProps> = ({
       console.error('❌ Failed to load profile:', error);
       window.open('https://www.youtube.com', '_blank');
     }
+  };
+
+  // Hilfsfunktion: Aktives Profil finden
+  const activeProfile = savedProfiles.find((p: any) => p.isActive);
+
+  // Wrapper für Aktionen, die ein Profil brauchen
+  const requireProfile = (action: () => void) => {
+    if (!activeProfile) {
+      setPendingAction(() => action);
+      setShowProfileSelect(true);
+    } else {
+      action();
+    }
+  };
+
+  // Angepasst: Browse-Handler
+  const handleBrowseAnonymousWrapped = () => requireProfile(handleBrowseAnonymous);
+  const handleBrowseWithProfileWrapped = () => requireProfile(handleBrowseWithProfile);
+
+  // Wenn im Modal ein Profil gewählt wird
+  const handleProfileSelect = (profile: any) => {
+    // Profil aktivieren
+    setSavedProfiles(savedProfiles.map(p => ({ ...p, isActive: p.id === profile.id })));
+    setShowProfileSelect(false);
+    if (pendingAction) pendingAction();
+  };
+  // Wenn im Modal ein neues Profil erstellt werden soll
+  const handleProfileCreate = () => {
+    setShowProfileSelect(false);
+    onCreateProfile();
   };
 
   const SecurityWarningModal = () => {
@@ -356,7 +397,7 @@ export const Header: React.FC<HeaderProps> = ({
               })()}
               {/* Browse Buttons */}
               <button
-                onClick={handleBrowseAnonymous}
+                onClick={handleBrowseAnonymousWrapped}
                 className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
                 title="Öffnet YouTube anonym mit Extension"
               >
@@ -366,7 +407,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>Browse Anonymous</span>
               </button>
               <button
-                onClick={handleBrowseWithProfile}
+                onClick={handleBrowseWithProfileWrapped}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
                 title="Öffnet YouTube mit vollständigem Profile"
               >
@@ -401,7 +442,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
 
-      <BubbleProfileManager
+      <ProfileManager
         isVisible={isProfileManagerOpen}
         onClose={() => setIsProfileManagerOpen(false)}
         onLoadProfile={onLoadProfile}
@@ -414,7 +455,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       {isTrainingManagerOpen && (
         <TrainingManager
-          presets={presets}
           onImport={onImport}
           onExport={onExport}
           onCreate={onCreate}
@@ -432,6 +472,18 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Security Warning Modal */}
       <AnimatePresence>
         {showSecurityWarning && <SecurityWarningModal />}
+      </AnimatePresence>
+
+      {/* ProfileSelectModal */}
+      <AnimatePresence>
+        {showProfileSelect && (
+          <ProfileSelectModal
+            profiles={savedProfiles}
+            onSelect={handleProfileSelect}
+            onCreate={handleProfileCreate}
+            onClose={() => setShowProfileSelect(false)}
+          />
+        )}
       </AnimatePresence>
     </>
   );

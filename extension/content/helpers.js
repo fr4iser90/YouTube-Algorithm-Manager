@@ -22,7 +22,7 @@ function generateCategories(recommendations) {
   }));
 }
 
-function calculateBubbleScore(recommendations, targetKeywords) {
+function calculateProfileScore(recommendations, targetKeywords) {
   if (recommendations.length === 0 || targetKeywords.length === 0) return 0;
   
   const targetMatches = recommendations.filter(rec => 
@@ -97,7 +97,7 @@ function sendProgress(progress, message) {
       videosWatched: this.videosWatched,
       searchesPerformed: this.searchesPerformed,
       recommendations: this.recommendations,
-      bubbleScore: calculateBubbleScore(this.recommendations, this.currentPreset.targetKeywords || []),
+      profileScore: calculateProfileScore(this.recommendations, this.currentPreset.targetKeywords || []),
       timestamp: Date.now()
     };
     

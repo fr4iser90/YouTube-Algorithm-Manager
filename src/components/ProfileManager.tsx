@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { Save, Play, Trash2, Download, Upload, Clock, Target, Globe, Users, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BubblePreset, AlgorithmState, SavedProfile } from '../types';
+import { TrainingPreset, AlgorithmState, BrowserProfile } from '../types';
 
-interface BubbleProfileManagerProps {
-  onLoadProfile: (profile: SavedProfile) => void;
+interface ProfileManagerProps {
+  onLoadProfile: (profile: BrowserProfile) => void;
   onCreateProfile: () => void;
-  currentPreset?: BubblePreset;
+  currentPreset?: TrainingPreset;
   currentAlgorithmState?: AlgorithmState;
   isVisible: boolean;
   onClose: () => void;
-  savedProfiles: SavedProfile[];
-  setSavedProfiles: (profiles: SavedProfile[]) => void;
+  savedProfiles: BrowserProfile[];
+  setSavedProfiles: (profiles: BrowserProfile[]) => void;
 }
 
-export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
+export const ProfileManager: React.FC<ProfileManagerProps> = ({
   onLoadProfile,
   onCreateProfile,
   currentPreset,
@@ -26,14 +26,14 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
 }) => {
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'lastUsed' | 'bubbleStrength' | 'name' | 'createdAt'>('lastUsed');
+  const [sortBy, setSortBy] = useState<'lastUsed' | 'profileStrength' | 'name' | 'createdAt'>('lastUsed');
   const [filterTag, setFilterTag] = useState<string>('all');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfileDescription, setNewProfileDescription] = useState('');
   const [newProfileTags, setNewProfileTags] = useState<string[]>([]);
 
-  const saveProfiles = async (profiles: SavedProfile[]) => {
+  const saveProfiles = async (profiles: BrowserProfile[]) => {
     try {
       setSavedProfiles(profiles);
       await chrome.runtime.sendMessage({
@@ -59,19 +59,17 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
     console.log('🗂️ sessionStorage:', sessionStorageData);
     console.log('Data will be Base64 encoded for storage.');
 
-    const newProfile: SavedProfile = {
+    const newProfile: BrowserProfile = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name: newProfileName.trim(),
       description: newProfileDescription.trim(),
-      preset: currentPreset,
       algorithmState: currentAlgorithmState || {
         timestamp: new Date(),
         recommendations: [],
-        categories: [],
         sentiment: 'neutral',
-        bubbleScore: 0,
-        language: currentPreset.language,
-        region: currentPreset.region,
+        profileScore: 0,
+        language: currentPreset?.language || 'en',
+        region: currentPreset?.region || 'US',
         blockedChannels: [],
         prioritizedChannels: []
       },
@@ -80,12 +78,16 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
       sessionStorage: btoa(encodeURIComponent(sessionStorageData)),
       createdAt: new Date(),
       lastUsed: new Date(),
-      bubbleStrength: currentAlgorithmState?.bubbleScore || 0,
+      profileStrength: currentAlgorithmState?.profileScore || 0,
       totalVideosWatched: Math.floor(Math.random() * 100) + 50,
       totalSearches: Math.floor(Math.random() * 50) + 20,
       trainingHours: Math.floor(Math.random() * 10) + 2,
       isActive: false,
-      tags: newProfileTags
+      tags: newProfileTags,
+      language: currentPreset?.language || 'en',
+      region: currentPreset?.region || 'US',
+      category: currentPreset?.category || 'general',
+      color: currentPreset?.color || '#3B82F6'
     };
 
     const updatedProfiles = [...savedProfiles, newProfile];
@@ -97,7 +99,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
     window.dispatchEvent(new CustomEvent('profiles-updated'));
   };
 
-  const loadProfile = (profile: SavedProfile) => {
+  const loadProfile = (profile: BrowserProfile) => {
     try {
       const updatedProfiles = savedProfiles.map(s => ({
         ...s,
@@ -112,7 +114,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
     }
   };
 
-  const browseWithProfile = (profile: SavedProfile) => {
+  const browseWithProfile = (profile: BrowserProfile) => {
     chrome.runtime.sendMessage({
       type: 'BROWSE_WITH_PROFILE',
       profile: profile,
@@ -125,8 +127,8 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
     saveProfiles(updatedProfiles);
   };
 
-  const duplicateProfile = (profile: SavedProfile) => {
-    const duplicated: SavedProfile = {
+  const duplicateProfile = (profile: BrowserProfile) => {
+    const duplicated: BrowserProfile = {
       ...profile,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name: `${profile.name} (Copy)`,
@@ -145,7 +147,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'youtube-bubble-profiles.json';
+    link.download = 'youtube-profiles.json';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -184,8 +186,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
   const filteredAndSortedProfiles = savedProfiles
     .filter(profile => {
       const matchesSearch = profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           profile.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           profile.preset.name.toLowerCase().includes(searchQuery.toLowerCase());
+                           profile.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTag = filterTag === 'all' || profile.tags.includes(filterTag);
       return matchesSearch && matchesTag;
     })
@@ -193,8 +194,8 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
       switch (sortBy) {
         case 'lastUsed':
           return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
-        case 'bubbleStrength':
-          return b.bubbleStrength - a.bubbleStrength;
+        case 'profileStrength':
+          return b.profileStrength - a.profileStrength;
         case 'name':
           return a.name.localeCompare(b.name);
         case 'createdAt':
@@ -239,7 +240,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
             <Save className="h-6 w-6 text-blue-400" />
             <div>
               <h2 className="text-xl font-bold text-white">Profile Manager</h2>
-              <p className="text-sm text-gray-400">Load saved bubble profiles with persistent cookies</p>
+              <p className="text-sm text-gray-400">Load saved profiles with persistent cookies</p>
             </div>
           </div>
           
@@ -296,7 +297,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
               className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="lastUsed">Last Used</option>
-              <option value="bubbleStrength">Bubble Strength</option>
+              <option value="profileStrength">Profile Strength</option>
               <option value="name">Name</option>
               <option value="createdAt">Created Date</option>
             </select>
@@ -358,7 +359,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
                     <div className="flex items-center space-x-2">
                       <div 
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: profile.preset.color }}
+                        style={{ backgroundColor: profile.color }}
                       />
                       <h3 className="font-semibold text-white">{profile.name}</h3>
                       {profile.isActive && (
@@ -393,13 +394,13 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
                   </div>
 
                   <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-                    {profile.description || profile.preset.description}
+                    {profile.description}
                   </p>
 
                   <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Target className="h-3 w-3" />
-                      <span>{profile.bubbleStrength}% Bubble</span>
+                      <span>Profile Strength: {profile.profileStrength}%</span>
                     </div>
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Play className="h-3 w-3" />
@@ -407,7 +408,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
                     </div>
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Globe className="h-3 w-3" />
-                      <span>{profile.preset.language.toUpperCase()}/{profile.preset.region}</span>
+                      <span>{profile.language.toUpperCase()}/{profile.region}</span>
                     </div>
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Clock className="h-3 w-3" />
@@ -417,7 +418,7 @@ export const BubbleProfileManager: React.FC<BubbleProfileManagerProps> = ({
 
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>Last used: {formatTimeAgo(profile.lastUsed)}</span>
-                    <span>{profile.preset.category}</span>
+                    <span>{profile.category}</span>
                   </div>
 
                   {profile.tags.length > 0 && (

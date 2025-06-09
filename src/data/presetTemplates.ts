@@ -1,6 +1,6 @@
-import { BubblePreset } from '../types';
+import { TrainingPreset } from '../types';
 
-export const presetTemplates: Omit<BubblePreset, 'id' | 'createdAt'>[] = [
+export const presetTemplates: Omit<TrainingPreset, 'id' | 'createdAt'>[] = [
   {
     name: "Tech Deep Dive (English)",
     description: "AI research, programming, and cutting-edge technology in English",

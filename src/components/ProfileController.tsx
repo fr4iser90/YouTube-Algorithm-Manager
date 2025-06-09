@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
 import { Users, Plus, Trash2, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { BrowserProfile } from '../types';
 
 interface Profile {
   id: string;
   name: string;
-  bubbleType: string;
+  category: string;
   createdAt: Date;
   isActive: boolean;
 }
 
-export const BubbleProfileController: React.FC = () => {
+export const ProfileController: React.FC = () => {
   const [profiles, setProfiles] = useState<Profile[]>([
     {
       id: '1',
       name: 'Tech Research Profile',
-      bubbleType: 'tech',
+      category: 'tech',
       createdAt: new Date(),
       isActive: true
     }
@@ -29,7 +30,7 @@ export const BubbleProfileController: React.FC = () => {
     const newProfile: Profile = {
       id: Date.now().toString(),
       name: newProfileName,
-      bubbleType: 'custom',
+      category: 'custom',
       createdAt: new Date(),
       isActive: false
     };
@@ -91,7 +92,7 @@ export const BubbleProfileController: React.FC = () => {
               <div>
                 <h4 className="font-medium text-white">{profile.name}</h4>
                 <p className="text-sm text-gray-400">
-                  {profile.bubbleType} • {profile.createdAt.toLocaleDateString()}
+                  {profile.category} • {profile.createdAt.toLocaleDateString()}
                 </p>
               </div>
             </div>

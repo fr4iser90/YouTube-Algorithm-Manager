@@ -21,6 +21,14 @@ export class TrainingManager {
     console.log('🚀 Starting training with preset:', preset.name);
 
     try {
+      // Save training state before creating tab
+      await chrome.storage.local.set({
+        isTraining: true,
+        currentPreset: preset,
+        trainingStartTime: Date.now(),
+        pendingTraining: true // New flag to indicate training should start after reload
+      });
+
       // Always create a new tab for training
       const youtubeTab = await chrome.tabs.create({ url: "https://www.youtube.com" });
       this.trainingTab = youtubeTab;
@@ -31,53 +39,101 @@ export class TrainingManager {
       // Handle cookies automatically with retry
       const handleCookies = async () => {
         const cookieSelectors = [
+          // YouTube's specific consent button structure
+          'button.yt-spec-button-shape-next--filled',
+          'button.yt-spec-button-shape-next--call-to-action',
+          'div.yt-spec-touch-feedback-shape__fill',
+          // Parent elements that might contain the actual button
+          'ytd-consent-bump-v2-lightbox button',
+          'ytd-consent-bump-v2-lightbox .yt-spec-button-shape-next',
+          // Specific button classes
+          'button[jsname*="tWT92d"]',
+          'button[jsname*="ZUkOIc"]',
+          // Aria labels in different languages
           'button[aria-label*="Accept"]',
           'button[aria-label*="Akzeptieren"]',
           'button[aria-label*="Alle akzeptieren"]',
           'button[aria-label*="Accept all"]',
-          'button[jsname*="tWT92d"]', // YouTube's cookie consent button class
+          'button[aria-label*="I agree"]',
+          'button[aria-label*="Ich stimme zu"]',
+          // Form submit buttons
           'form[action*="consent"] button[type="submit"]',
-          'ytd-consent-bump-v2-lightbox button[aria-label*="Accept"]',
-          'ytd-consent-bump-v2-lightbox button[aria-label*="Akzeptieren"]'
+          // Generic consent buttons
+          'button.yt-spec-button-shape-next',
+          // Cookie banner specific
+          'div[aria-modal="true"] button',
+          'div[role="dialog"] button'
         ];
 
-        // Try multiple times with different selectors
-        for (let attempt = 0; attempt < 3; attempt++) {
-          await chrome.scripting.executeScript({
-            target: { tabId: youtubeTab.id },
-            func: (selectors) => {
-              for (const selector of selectors) {
-                const button = document.querySelector(selector);
-                if (button) {
-                  button.click();
-                  return true;
-                }
-              }
-              return false;
-            },
-            args: [cookieSelectors]
-          });
+        // Try multiple times with different selectors and wait for page load
+        for (let attempt = 0; attempt < 5; attempt++) {
+          try {
+            // Wait for page to be fully loaded
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
 
-          // Wait a bit before next attempt
-          await new Promise(resolve => setTimeout(resolve, 1000));
+            const result = await chrome.scripting.executeScript({
+              target: { tabId: youtubeTab.id },
+              func: (selectors) => {
+                // Try clicking any visible consent button
+                for (const selector of selectors) {
+                  const elements = document.querySelectorAll(selector);
+                  for (const element of elements) {
+                    // Check if element is visible and clickable
+                    if (element.offsetParent !== null) {
+                      // Try to find the actual button if we have a wrapper
+                      const button = element.closest('button') || element;
+                      if (button) {
+                        try {
+                          // Try both click() and mousedown/mouseup events
+                          button.click();
+                          button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                          button.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                          console.log('Clicked element:', selector);
+                          return true;
+                        } catch (err) {
+                          console.log('Click failed:', err);
+                        }
+                      }
+                    }
+                  }
+                }
+                return false;
+              },
+              args: [cookieSelectors]
+            });
+
+            if (result[0].result) {
+              console.log('✅ Cookie consent handled successfully');
+              // After cookie consent, save state again in case of reload
+              await chrome.storage.local.set({
+                isTraining: true,
+                currentPreset: preset,
+                trainingStartTime: Date.now(),
+                pendingTraining: true
+              });
+              // Wait a bit to make sure the consent is processed
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              break;
+            }
+          } catch (error) {
+            console.log(`Attempt ${attempt + 1} failed:`, error);
+          }
         }
       };
 
       // Try to handle cookies
       await handleCookies();
 
-      // Send the training command to the content script
-      await chrome.tabs.sendMessage(youtubeTab.id, {
-        type: 'START_TRAINING',
-        preset: preset
-      });
-
-      // Save training status
-      await chrome.storage.local.set({
-        isTraining: true,
-        currentPreset: preset,
-        trainingStartTime: Date.now()
-      });
+      // Check if we need to restore training state
+      const storage = await chrome.storage.local.get(['pendingTraining', 'currentPreset']);
+      if (storage.pendingTraining && storage.currentPreset) {
+        console.log('🔄 Restoring training state after page load');
+        // Send the training command to the content script
+        await chrome.tabs.sendMessage(youtubeTab.id, {
+          type: 'START_TRAINING',
+          preset: storage.currentPreset
+        });
+      }
 
     } catch (error) {
       console.error('❌ Failed to start training:', error);
@@ -94,18 +150,33 @@ export class TrainingManager {
     this.currentPreset = null;
 
     try {
-      // Send stop command to content script
+      // Check if tab still exists before sending message
       if (this.trainingTab) {
-        await chrome.tabs.sendMessage(this.trainingTab.id, {
-          type: 'STOP_TRAINING'
-        });
+        try {
+          const tab = await chrome.tabs.get(this.trainingTab.id);
+          if (tab) {
+            await chrome.tabs.sendMessage(this.trainingTab.id, {
+              type: 'STOP_TRAINING'
+            }).catch(err => {
+              console.log('Tab exists but message could not be sent:', err);
+            });
+          }
+        } catch (err) {
+          console.log('Tab no longer exists:', err);
+        }
       }
 
-      // Clear training state
+      // Clear training state regardless of tab status
       await chrome.storage.local.remove(['isTraining', 'currentPreset', 'trainingStartTime']);
 
     } catch (error) {
       console.error('❌ Error stopping training:', error);
+      // Still try to clear training state even if there was an error
+      try {
+        await chrome.storage.local.remove(['isTraining', 'currentPreset', 'trainingStartTime']);
+      } catch (storageError) {
+        console.error('Failed to clear training state:', storageError);
+      }
     }
 
     this.trainingTab = null;
@@ -276,7 +347,7 @@ export class TrainingManager {
       type: 'basic',
       iconUrl: 'assets/icon.svg',
       title: 'Training Completed!',
-      message: `Watched ${results.videosWatched} videos, performed ${results.searchesPerformed} searches. Bubble score: ${results.bubbleScore}%`
+      message: `Watched ${results.videosWatched} videos, performed ${results.searchesPerformed} searches. Profile score: ${results.profileScore}%`
     });
   }
 

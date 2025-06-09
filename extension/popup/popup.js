@@ -75,7 +75,7 @@ class PopupManager {
       }
       
       if (storage.lastTrainingResults) {
-        this.showNotification(`Last training: ${storage.lastTrainingResults.bubbleScore}% bubble score`, 'success');
+        this.showNotification(`Last training: ${storage.lastTrainingResults.profileScore}% profile score`, 'success');
       }
       
     } catch (error) {
@@ -875,7 +875,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       
     case 'TRAINING_COMPLETED':
       popup.updateTrainingStatus(false);
-      popup.showNotification(`Training completed! Bubble score: ${message.results.bubbleScore}%`, 'success');
+      popup.showNotification(`Training completed! Profile score: ${message.results.profileScore}%`, 'success');
       break;
       
     case 'TRAINING_ERROR':

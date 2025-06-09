@@ -71,7 +71,7 @@ The application is built using a modern React-based architecture with the follow
 - **Techstack**: React, TypeScript, Vite, Framer Motion, Lucide React, Chrome Extension API.
 - **Key Components**:
   - **`ExtensionBridge`**: Manages communication between the web app and the extension.
-  - **`BubbleProfileManager`**: Handles saving, loading, and managing profiles.
+  - **`ProfileManager`**: Handles saving, loading, and managing profiles.
   - **`PresetCard`**: Displays and manages custom presets.
   - **`BrowserController`**: Controls browser settings for the extension.
 

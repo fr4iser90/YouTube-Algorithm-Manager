@@ -25,12 +25,12 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
   avoidKeywords
 }) => {
   const [recommendations, setRecommendations] = useState<RecommendationData[]>([]);
-  const [bubbleStrength, setBubbleStrength] = useState<{ time: string; strength: number }[]>([]);
+  const [profileStrength, setProfileStrength] = useState<{ time: string; strength: number }[]>([]);
   const [stats, setStats] = useState({
     totalRecommendations: 0,
     targetMatches: 0,
     avoidMatches: 0,
-    bubbleScore: 0,
+    profileScore: 0,
     diversityScore: 0
   });
 
@@ -60,12 +60,12 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
           
           setRecommendations(prev => [...prev.slice(-19), ...newRecommendations]);
 
-          // Update bubble strength over time
+          // Update profile strength over time
           const currentTime = new Date().toLocaleTimeString();
-          setBubbleStrength(prev => {
+          setProfileStrength(prev => {
             const newData = [...prev.slice(-9), {
               time: currentTime,
-              strength: progressData.bubbleScore || 0
+              strength: progressData.profileScore || 0
             }];
             return newData;
           });
@@ -99,7 +99,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
     const targetMatches = recommendations.filter(r => r.isTargetContent).length;
     const avoidMatches = recommendations.filter(r => r.isAvoidContent).length;
     
-    const bubbleScore = totalRecommendations > 0 
+    const profileScore = totalRecommendations > 0 
       ? Math.round((targetMatches / totalRecommendations) * 100)
       : 0;
     
@@ -111,7 +111,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
       totalRecommendations,
       targetMatches,
       avoidMatches,
-      bubbleScore,
+      profileScore,
       diversityScore
     });
   }, [recommendations]);
@@ -142,10 +142,10 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
           animate={{ scale: 1 }}
           className="bg-gray-700/50 rounded-lg p-4 text-center"
         >
-          <div className="text-2xl font-bold text-blue-400">{stats.bubbleScore}%</div>
+          <div className="text-2xl font-bold text-blue-400">{stats.profileScore}%</div>
           <div className="text-xs text-gray-400 flex items-center justify-center space-x-1">
             <Target className="h-3 w-3" />
-            <span>Bubble Score</span>
+            <span>Profile Score</span>
           </div>
         </motion.div>
 
@@ -207,11 +207,11 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
           </ResponsiveContainer>
         </div>
 
-        {/* Bubble Strength Over Time */}
+        {/* Profile Strength Over Time */}
         <div>
-          <h4 className="text-sm font-medium text-gray-300 mb-3">Bubble Stärke über Zeit</h4>
+          <h4 className="text-sm font-medium text-gray-300 mb-3">Profile Stärke über Zeit</h4>
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={bubbleStrength}>
+            <LineChart data={profileStrength}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="time" stroke="#9CA3AF" fontSize={12} />
               <YAxis stroke="#9CA3AF" domain={[0, 100]} />

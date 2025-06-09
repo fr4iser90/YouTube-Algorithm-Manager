@@ -1,23 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, Activity, Youtube, Search, Eye, ThumbsUp, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface AutomationAction {
-  id: string;
-  type: 'search' | 'watch' | 'like' | 'comment' | 'subscribe' | 'navigate';
-  description: string;
-  status: 'pending' | 'running' | 'completed' | 'error';
-  duration?: number;
-  progress?: number;
-  data?: any;
-}
+import { AutomationAction, TrainingProgress } from '../types/automation';
+import { TrainingPreset } from '../types';
 
 interface YouTubeAutomationProps {
   isActive: boolean;
   onStart: () => void;
   onPause: () => void;
   onStop: () => void;
-  currentPreset?: any;
+  currentPreset?: TrainingPreset;
 }
 
 export const YouTubeAutomation: React.FC<YouTubeAutomationProps> = ({

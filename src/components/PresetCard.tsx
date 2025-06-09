@@ -1,14 +1,14 @@
 import React from 'react';
 import { Play, Edit, Trash2, Copy, Clock, Target, Globe, Shield, Users } from 'lucide-react';
-import { BubblePreset } from '../types';
+import { TrainingPreset } from '../types';
 import { motion } from 'framer-motion';
 
 interface PresetCardProps {
-  preset: BubblePreset;
-  onTrain: (preset: BubblePreset) => void;
-  onEdit: (preset: BubblePreset) => void;
+  preset: TrainingPreset;
+  onTrain: (preset: TrainingPreset) => void;
+  onEdit: (preset: TrainingPreset) => void;
   onDelete: (id: string) => void;
-  onDuplicate: (preset: BubblePreset) => void;
+  onDuplicate: (preset: TrainingPreset) => void;
   isTraining?: boolean;
 }
 

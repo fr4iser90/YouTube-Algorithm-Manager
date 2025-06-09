@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BubblePreset, SearchPattern, WatchPattern, ChannelPreference } from '../types';
+import { TrainingPreset, SearchPattern, WatchPattern, ChannelPreference } from '../types';
 import { 
   X, Plus, Trash2, Search, Globe, Target, Clock, Shield, 
   Users, Play, Pause, Settings, Lightbulb, Youtube, Eye,
@@ -8,10 +8,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PresetEditorProps {
-  preset?: BubblePreset;
+  preset?: TrainingPreset;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (preset: BubblePreset) => void;
+  onSave: (preset: TrainingPreset) => void;
 }
 
 export const PresetEditor: React.FC<PresetEditorProps> = ({
@@ -20,7 +20,7 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
   onClose,
   onSave
 }) => {
-  const [formData, setFormData] = useState<Partial<BubblePreset>>({
+  const [formData, setFormData] = useState<Partial<TrainingPreset>>({
     name: '',
     description: '',
     category: 'custom',
@@ -128,7 +128,7 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
   const handleSave = () => {
     if (!formData.name?.trim()) return;
 
-    const savedPreset: BubblePreset = {
+    const savedPreset: TrainingPreset = {
       id: preset?.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name: formData.name,
       description: formData.description || '',

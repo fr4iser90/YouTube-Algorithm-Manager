@@ -86,14 +86,92 @@ async function watchVideo(duration) {
     let adSkipInterval;
     if (this.currentPreset.advancedOptions?.skipAds) {
       adSkipInterval = setInterval(() => {
-        const skipButton = document.querySelector(
-          '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, button[aria-label="Skip Ad"]'
-        );
-        if (skipButton) {
-          skipButton.click();
-          console.log('Ad skipped');
+        // Try different ad skip button selectors
+        const skipSelectors = [
+          // Main skip button container
+          '.ytp-ad-skip-button',
+          '.ytp-ad-skip-button-modern',
+          '.ytp-skip-ad-button',
+          // Skip button text (click parent)
+          '.ytp-skip-ad-button__text',
+          // Button with specific text
+          'button[aria-label="Skip Ad"]',
+          'button[aria-label="Werbung überspringen"]',
+          'button[aria-label="Skip"]',
+          'button[aria-label="Überspringen"]',
+          // Additional button classes
+          'button.ytp-ad-skip-button',
+          'button.ytp-ad-skip-button-container',
+          'div.ytp-ad-skip-button-container button',
+          // Generic skip buttons
+          'button[aria-label*="Skip"]',
+          'button[aria-label*="Überspringen"]',
+          // Ad overlay close buttons
+          '.ytp-ad-overlay-close-button',
+          'button[aria-label="Close ad"]',
+          'button[aria-label="Werbung schließen"]'
+        ];
+
+        // Try to find and click any skip button
+        for (const selector of skipSelectors) {
+          const elements = document.querySelectorAll(selector);
+          for (const element of elements) {
+            if (element.offsetParent !== null) { // Check if element is visible
+              try {
+                // If we found the text element, click its parent button
+                const button = element.closest('button') || element;
+                if (button) {
+                  // Try multiple click methods
+                  button.click();
+                  button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                  button.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                  button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                  
+                  // Also try to focus and press Enter
+                  button.focus();
+                  button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+                  
+                  console.log('✅ Ad skip attempted with:', selector);
+                  break;
+                }
+              } catch (err) {
+                console.log('Skip attempt failed:', err);
+              }
+            }
+          }
         }
-      }, 500);
+
+        // Also try to skip video ads by seeking
+        if (video.duration && video.duration > 0) {
+          // For short videos (likely ads)
+          if (video.duration < 30) {
+            try {
+              video.currentTime = video.duration - 0.1;
+              console.log('✅ Tried to seek to end of short video');
+            } catch (err) {
+              console.log('Could not seek video:', err);
+            }
+          }
+          
+          // For longer ads, try to skip to last 5 seconds
+          if (video.duration > 30 && video.duration < 60) {
+            try {
+              video.currentTime = video.duration - 5;
+              console.log('✅ Tried to skip to last 5 seconds');
+            } catch (err) {
+              console.log('Could not seek video:', err);
+            }
+          }
+        }
+
+        // Try to mute and speed up ads
+        if (video.muted === false) {
+          video.muted = true;
+        }
+        if (video.playbackRate < 2) {
+          video.playbackRate = 2;
+        }
+      }, 500); // Check every 500ms
     }
     
     const watchTime = Math.min(duration, 120) * 1000;

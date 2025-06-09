@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Eye, EyeOff, RefreshCw, AlertTriangle, CheckCircle, Save, Trash2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { BrowserProfile } from '../types';
 
 interface AnonymousModeProps {
   onConfigChange: (config: AnonymousConfig) => void;
@@ -10,27 +11,15 @@ interface AnonymousConfig {
   enabled: boolean;
   rotateUserAgent: boolean;
   cookieStrategy: 'persist' | 'session' | 'clear' | 'rotate';
-  bubbleProfiles: BubbleProfile[];
-  activeBubbleProfile: string | null;
+  profiles: BrowserProfile[];
+  activeProfile: string | null;
   useVPN: boolean;
   randomizeViewport: boolean;
   disableWebRTC: boolean;
   spoofTimezone: boolean;
   blockTracking: boolean;
-  autoSaveBubbles: boolean;
+  autoSaveProfiles: boolean;
   quickLoadEnabled: boolean;
-}
-
-interface BubbleProfile {
-  id: string;
-  name: string;
-  category: string;
-  cookies: string; // Base64 encoded cookie data
-  localStorage: string; // Base64 encoded localStorage data
-  createdAt: Date;
-  lastUsed: Date;
-  bubbleStrength: number;
-  targetKeywords: string[];
 }
 
 export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) => {
@@ -38,42 +27,44 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
     enabled: true,
     rotateUserAgent: true,
     cookieStrategy: 'persist',
-    bubbleProfiles: [
+    profiles: [
       {
-        id: 'tech-bubble',
-        name: 'Tech Bubble',
-        category: 'tech',
+        id: 'tech-profile',
+        name: 'Tech Profile',
+        description: 'Profile for tech content',
         cookies: 'dGVjaC1jb29raWVz', // Mock base64
         localStorage: 'dGVjaC1sb2NhbA==',
+        sessionStorage: '',
+        userAgent: '',
+        viewport: { width: 1920, height: 1080 },
         createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         lastUsed: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        bubbleStrength: 85,
-        targetKeywords: ['AI', 'programming', 'tech']
-      },
-      {
-        id: 'science-bubble',
-        name: 'Science Bubble',
-        category: 'science',
-        cookies: 'c2NpZW5jZS1jb29raWVz',
-        localStorage: 'c2NpZW5jZS1sb2NhbA==',
-        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-        lastUsed: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        bubbleStrength: 72,
-        targetKeywords: ['research', 'science', 'study']
+        isActive: false,
+        tags: ['tech', 'ai'],
+        totalVideosWatched: 150,
+        totalSearches: 75,
+        trainingHours: 5,
+        averageWatchTime: 15,
+        preferredCategories: ['tech', 'programming'],
+        preferredChannels: [],
+        preferredKeywords: ['AI', 'programming', 'tech'],
+        watchHistory: [],
+        avoidedChannels: [],
+        avoidedKeywords: []
       }
     ],
-    activeBubbleProfile: null,
+    activeProfile: null,
     useVPN: false,
     randomizeViewport: true,
     disableWebRTC: true,
     spoofTimezone: false,
     blockTracking: true,
-    autoSaveBubbles: true,
+    autoSaveProfiles: true,
     quickLoadEnabled: true
   });
 
   const [anonymityScore, setAnonymityScore] = useState(85);
-  const [showBubbleManager, setShowBubbleManager] = useState(false);
+  const [showProfileManager, setShowProfileManager] = useState(false);
 
   const updateConfig = <K extends keyof AnonymousConfig>(
     key: K,
@@ -102,32 +93,45 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
     setAnonymityScore(Math.min(100, score));
   };
 
-  const loadBubbleProfile = (profileId: string) => {
-    updateConfig('activeBubbleProfile', profileId);
+  const loadProfile = (profileId: string) => {
+    updateConfig('activeProfile', profileId);
   };
 
-  const saveBubbleProfile = (name: string, category: string) => {
-    const newProfile: BubbleProfile = {
+  const saveProfile = (name: string, description: string) => {
+    const newProfile: BrowserProfile = {
       id: Date.now().toString(),
       name,
-      category,
+      description,
       cookies: btoa(`cookies-${Date.now()}`), // Mock cookie data
       localStorage: btoa(`localStorage-${Date.now()}`),
+      sessionStorage: '',
+      userAgent: '',
+      viewport: { width: 1920, height: 1080 },
       createdAt: new Date(),
       lastUsed: new Date(),
-      bubbleStrength: Math.floor(Math.random() * 40) + 60,
-      targetKeywords: []
+      isActive: false,
+      tags: [],
+      totalVideosWatched: 0,
+      totalSearches: 0,
+      trainingHours: 0,
+      averageWatchTime: 0,
+      preferredCategories: [],
+      preferredChannels: [],
+      preferredKeywords: [],
+      watchHistory: [],
+      avoidedChannels: [],
+      avoidedKeywords: []
     };
 
-    updateConfig('bubbleProfiles', [...config.bubbleProfiles, newProfile]);
+    updateConfig('profiles', [...config.profiles, newProfile]);
   };
 
-  const deleteBubbleProfile = (profileId: string) => {
-    const updatedProfiles = config.bubbleProfiles.filter(p => p.id !== profileId);
-    updateConfig('bubbleProfiles', updatedProfiles);
+  const deleteProfile = (profileId: string) => {
+    const updatedProfiles = config.profiles.filter(p => p.id !== profileId);
+    updateConfig('profiles', updatedProfiles);
     
-    if (config.activeBubbleProfile === profileId) {
-      updateConfig('activeBubbleProfile', null);
+    if (config.activeProfile === profileId) {
+      updateConfig('activeProfile', null);
     }
   };
 
@@ -216,7 +220,7 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
       <div className="mb-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
         <h4 className="text-sm font-medium text-blue-300 mb-3 flex items-center space-x-2">
           <Save className="h-4 w-4" />
-          <span>Cookie & Bubble Management</span>
+          <span>Cookie & Profile Management</span>
         </h4>
         
         <div className="space-y-4">
@@ -238,11 +242,11 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-300">Auto-Save Bubbles</label>
+            <label className="text-sm text-gray-300">Auto-Save Profiles</label>
             <input
               type="checkbox"
-              checked={config.autoSaveBubbles}
-              onChange={(e) => updateConfig('autoSaveBubbles', e.target.checked)}
+              checked={config.autoSaveProfiles}
+              onChange={(e) => updateConfig('autoSaveProfiles', e.target.checked)}
               disabled={!config.enabled}
               className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
             />
@@ -261,48 +265,48 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
         </div>
       </div>
 
-      {/* Bubble Profile Manager */}
+      {/* Profile Manager */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-medium text-gray-300">Saved Bubble Profiles</h4>
+          <h4 className="text-sm font-medium text-gray-300">Saved Profiles</h4>
           <button
-            onClick={() => setShowBubbleManager(!showBubbleManager)}
+            onClick={() => setShowProfileManager(!showProfileManager)}
             className="text-xs text-purple-400 hover:text-purple-300"
           >
-            {showBubbleManager ? 'Hide' : 'Manage'}
+            {showProfileManager ? 'Hide' : 'Manage'}
           </button>
         </div>
 
-        {config.bubbleProfiles.length > 0 && (
+        {config.profiles.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            {config.bubbleProfiles.slice(0, showBubbleManager ? undefined : 2).map(profile => (
+            {config.profiles.slice(0, showProfileManager ? undefined : 2).map(profile => (
               <motion.div
                 key={profile.id}
                 className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                  config.activeBubbleProfile === profile.id
+                  config.activeProfile === profile.id
                     ? 'bg-purple-900/30 border-purple-500'
                     : 'bg-gray-700/30 border-gray-600 hover:border-gray-500'
                 }`}
-                onClick={() => loadBubbleProfile(profile.id)}
+                onClick={() => loadProfile(profile.id)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
                     <div className={`w-3 h-3 rounded-full ${
-                      profile.category === 'tech' ? 'bg-blue-400' :
-                      profile.category === 'science' ? 'bg-green-400' :
-                      profile.category === 'music' ? 'bg-purple-400' :
+                      profile.preferredCategories.includes('tech') ? 'bg-blue-400' :
+                      profile.preferredCategories.includes('science') ? 'bg-green-400' :
+                      profile.preferredCategories.includes('music') ? 'bg-purple-400' :
                       'bg-gray-400'
                     }`} />
                     <span className="text-white font-medium text-sm">{profile.name}</span>
                   </div>
                   
-                  {showBubbleManager && (
+                  {showProfileManager && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteBubbleProfile(profile.id);
+                        deleteProfile(profile.id);
                       }}
                       className="text-red-400 hover:text-red-300"
                     >
@@ -317,14 +321,14 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
                     <span>{formatTimeAgo(profile.lastUsed)}</span>
                   </span>
                   <span className={`font-medium ${
-                    profile.bubbleStrength >= 80 ? 'text-green-400' :
-                    profile.bubbleStrength >= 60 ? 'text-yellow-400' : 'text-red-400'
+                    profile.totalVideosWatched >= 150 ? 'text-green-400' :
+                    profile.totalVideosWatched >= 75 ? 'text-yellow-400' : 'text-red-400'
                   }`}>
-                    {profile.bubbleStrength}% Bubble
+                    {profile.totalVideosWatched} videos watched
                   </span>
                 </div>
                 
-                {config.activeBubbleProfile === profile.id && (
+                {config.activeProfile === profile.id && (
                   <div className="mt-2 text-xs text-purple-300">
                     ✓ Active Profile - Cookies loaded
                   </div>
@@ -338,10 +342,10 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           <div className="p-3 bg-green-900/20 border border-green-700 rounded-lg">
             <div className="flex items-center space-x-2 text-green-300 text-sm">
               <CheckCircle className="h-4 w-4" />
-              <span>Quick Load enabled - Bubble loads instantly!</span>
+              <span>Quick Load enabled - Profile loads instantly!</span>
             </div>
             <p className="text-green-200 text-xs mt-1">
-              Next startup will automatically load the last bubble profile.
+              Next startup will automatically load the last profile.
             </p>
           </div>
         )}
@@ -445,13 +449,13 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           <div>
             <h5 className="text-yellow-300 font-medium text-sm">Cookie Strategy Guide</h5>
             <div className="text-yellow-200 text-xs mt-2 space-y-1">
-              <div><strong>Persistent Cookies:</strong> Bubble stays active, fastest startup</div>
-              <div><strong>Profile Cookies:</strong> Bubble only during browser session</div>
-              <div><strong>Clear Cookies:</strong> Maximum anonymity, but bubble must rebuild</div>
-              <div><strong>Rotate Profiles:</strong> Switch between different bubbles</div>
+              <div><strong>Persistent Cookies:</strong> Profile stays active, fastest startup</div>
+              <div><strong>Profile Cookies:</strong> Profile only during browser session</div>
+              <div><strong>Clear Cookies:</strong> Maximum anonymity, but profile must rebuild</div>
+              <div><strong>Rotate Profiles:</strong> Switch between different profiles</div>
             </div>
             <div className="mt-3 p-2 bg-yellow-900/30 rounded text-xs text-yellow-100">
-              💡 <strong>Recommendation:</strong> Use "Persistent" for fast bubble loading or "Rotate" for maximum flexibility
+              💡 <strong>Recommendation:</strong> Use "Persistent" for fast profile loading or "Rotate" for maximum flexibility
             </div>
           </div>
         </div>
@@ -475,7 +479,7 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
               Tracking: {config.blockTracking ? 'Blocked' : 'Allowed'}
             </div>
             <div className="text-gray-300">
-              Bubble Profiles: {config.bubbleProfiles.length} saved
+              Profiles: {config.profiles.length} saved
             </div>
             <div className="text-gray-300">
               Quick Load: {config.quickLoadEnabled ? 'Enabled' : 'Disabled'}

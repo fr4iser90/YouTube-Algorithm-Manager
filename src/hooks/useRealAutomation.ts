@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { automationManager, AutomationProgress } from '../utils/automationManager';
-import { BubblePreset, AlgorithmState } from '../types';
+import { TrainingPreset, AlgorithmState } from '../types';
 
 export const useRealAutomation = () => {
   const [isActive, setIsActive] = useState(false);
@@ -8,7 +8,7 @@ export const useRealAutomation = () => {
   const [error, setError] = useState<string | null>(null);
 
   const startAutomation = useCallback(async (
-    preset: BubblePreset,
+    preset: TrainingPreset,
     browserConfig: any,
     anonymousConfig: any,
     onComplete: (results: AlgorithmState) => void

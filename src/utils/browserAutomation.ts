@@ -196,7 +196,7 @@ export const analyzeVideoTitle = (title: string, targetKeywords: string[], avoid
   };
 };
 
-export const calculateBubbleScore = (recommendations: any[], targetKeywords: string[]): number => {
+export const calculateProfileScore = (recommendations: any[], targetKeywords: string[]): number => {
   if (recommendations.length === 0) return 0;
   
   const targetMatches = recommendations.filter(rec => 

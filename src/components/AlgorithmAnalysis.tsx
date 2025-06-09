@@ -1,6 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlgorithmState } from '../types';
+import { AlgorithmState, CategoryDistribution } from '../types';
 import { TrendingUp, Eye, Target } from 'lucide-react';
 
 interface AlgorithmAnalysisProps {
@@ -39,16 +39,16 @@ export const AlgorithmAnalysis: React.FC<AlgorithmAnalysisProps> = ({
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
-                data={currentState.categories}
+                data={currentState.categoryDistribution}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ category, percentage }) => `${category} ${percentage}%`}
+                label={({ category, percentage }: CategoryDistribution) => `${category} ${percentage}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="percentage"
               >
-                {currentState.categories.map((entry, index) => (
+                {currentState.categoryDistribution.map((entry: CategoryDistribution, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -58,7 +58,7 @@ export const AlgorithmAnalysis: React.FC<AlgorithmAnalysisProps> = ({
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-gray-300 mb-3">Bubble Strength Over Time</h4>
+          <h4 className="text-sm font-medium text-gray-300 mb-3">Profile Strength Over Time</h4>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={historicalData.slice(-7)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -75,7 +75,7 @@ export const AlgorithmAnalysis: React.FC<AlgorithmAnalysisProps> = ({
                   color: '#F3F4F6'
                 }}
               />
-              <Bar dataKey="bubbleScore" fill="#3B82F6" />
+              <Bar dataKey="trainingProgress" fill="#3B82F6" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -85,9 +85,9 @@ export const AlgorithmAnalysis: React.FC<AlgorithmAnalysisProps> = ({
         <div className="bg-gray-700 rounded-lg p-4 text-center">
           <div className="flex items-center justify-center space-x-2 mb-1">
             <Eye className="h-4 w-4 text-blue-400" />
-            <span className="text-xs text-gray-400">Bubble Score</span>
+            <span className="text-xs text-gray-400">Profile Score</span>
           </div>
-          <div className="text-xl font-bold text-white">{currentState.bubbleScore}%</div>
+          <div className="text-xl font-bold text-white">{currentState.trainingProgress}%</div>
         </div>
 
         <div className="bg-gray-700 rounded-lg p-4 text-center">
@@ -104,10 +104,10 @@ export const AlgorithmAnalysis: React.FC<AlgorithmAnalysisProps> = ({
             <span className="text-xs text-gray-400">Sentiment</span>
           </div>
           <div className={`text-xl font-bold capitalize ${
-            currentState.sentiment === 'positive' ? 'text-green-400' :
-            currentState.sentiment === 'negative' ? 'text-red-400' : 'text-gray-400'
+            currentState.contentAnalysis.sentiment === 'positive' ? 'text-green-400' :
+            currentState.contentAnalysis.sentiment === 'negative' ? 'text-red-400' : 'text-gray-400'
           }`}>
-            {currentState.sentiment}
+            {currentState.contentAnalysis.sentiment}
           </div>
         </div>
       </div>

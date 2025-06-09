@@ -21,14 +21,22 @@ export const MLAnalytics: React.FC<MLAnalyticsProps> = ({
   const [analyses, setAnalyses] = useState<ContentAnalysis[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [modelMetrics, setModelMetrics] = useState({ accuracy: 0, categories: [], isInitialized: false });
+  const [modelMetrics, setModelMetrics] = useState<{
+    accuracy: number;
+    categories: string[];
+    isInitialized: boolean;
+  }>({
+    accuracy: 0,
+    categories: [],
+    isInitialized: false
+  });
   const [insights, setInsights] = useState({
     avgQuality: 0,
     clickbaitPercentage: 0,
     sentimentDistribution: { positive: 0, negative: 0, neutral: 0 },
     categoryDistribution: {} as Record<string, number>,
     engagementPrediction: 0,
-    bubbleEffectiveness: 0
+    profileEffectiveness: 0
   });
 
   const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#6B7280', '#EC4899', '#14B8A6'];
@@ -111,13 +119,13 @@ export const MLAnalytics: React.FC<MLAnalyticsProps> = ({
     // Average engagement prediction
     const engagementPrediction = results.reduce((sum, r) => sum + r.engagementPrediction, 0) / results.length;
 
-    // Bubble effectiveness (how well target keywords are represented)
+    // Profile effectiveness (how well target keywords are represented)
     const targetMatches = results.filter(r => 
       targetKeywords.some(keyword => 
         r.keywords.some(k => k.toLowerCase().includes(keyword.toLowerCase()))
       )
     ).length;
-    const bubbleEffectiveness = (targetMatches / results.length) * 100;
+    const profileEffectiveness = (targetMatches / results.length) * 100;
 
     setInsights({
       avgQuality,
@@ -125,7 +133,7 @@ export const MLAnalytics: React.FC<MLAnalyticsProps> = ({
       sentimentDistribution,
       categoryDistribution,
       engagementPrediction: engagementPrediction * 100,
-      bubbleEffectiveness
+      profileEffectiveness
     });
   };
 
@@ -263,11 +271,11 @@ export const MLAnalytics: React.FC<MLAnalyticsProps> = ({
               className="bg-gray-700/50 rounded-lg p-4 text-center"
             >
               <div className="text-2xl font-bold text-blue-400">
-                {Math.round(insights.bubbleEffectiveness)}%
+                {Math.round(insights.profileEffectiveness)}%
               </div>
               <div className="text-xs text-gray-400 flex items-center justify-center space-x-1">
                 <Target className="h-3 w-3" />
-                <span>Bubble Effect</span>
+                <span>Profile Effect</span>
               </div>
             </motion.div>
           </div>
@@ -405,7 +413,7 @@ export const MLAnalytics: React.FC<MLAnalyticsProps> = ({
               <div>
                 <h5 className="text-purple-300 font-medium text-sm">AI Insights</h5>
                 <div className="text-purple-200 text-xs mt-2 space-y-1">
-                  <div>• Algorithm zeigt {Math.round(insights.bubbleEffectiveness)}% Übereinstimmung mit Ziel-Keywords</div>
+                  <div>• Algorithm zeigt {Math.round(insights.profileEffectiveness)}% Übereinstimmung mit Ziel-Keywords</div>
                   <div>• Durchschnittliche Content-Qualität: {Math.round(insights.avgQuality * 100)}%</div>
                   <div>• {Math.round(insights.clickbaitPercentage)}% Clickbait-Content erkannt</div>
                   <div>• Vorhergesagte Engagement-Rate: {Math.round(insights.engagementPrediction)}%</div>

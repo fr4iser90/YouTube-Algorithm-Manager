@@ -12,7 +12,7 @@ interface BrowserSettings {
   userAgent: string;
   viewport: { width: number; height: number };
   cookiePersistence: 'none' | 'session' | 'persistent';
-  bubbleLoadStrategy: 'fresh' | 'restore' | 'quick';
+  profileLoadStrategy: 'fresh' | 'restore' | 'quick';
   profileManagement: 'isolated' | 'shared' | 'profile-based';
   autoBackup: boolean;
 }
@@ -31,17 +31,17 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
     muteAudio: true,
     speed: 2,
     // headless: false,
-    clearCookies: false, // Changed default - keep cookies for bubble persistence
+    clearCookies: false, // Changed default - keep cookies for profile persistence
     blockAds: true,
     userAgent: 'default',
     viewport: { width: 1920, height: 1080 },
-    cookiePersistence: 'persistent', // New: Keep cookies for bubble loading
-    bubbleLoadStrategy: 'quick', // New: Quick bubble loading
-    profileManagement: 'profile-based', // New: Profile-based session management
+    cookiePersistence: 'persistent', // Keep cookies for profile loading
+    profileLoadStrategy: 'quick', // Quick profile loading
+    profileManagement: 'profile-based', // Profile-based session management
     autoBackup: false,
   });
 
-  const [bubbleLoadTime, setBubbleLoadTime] = useState<number>(0);
+  const [profileLoadTime, setProfileLoadTime] = useState<number>(0);
 
   useEffect(() => {
     onSettingsChange(settings);
@@ -62,7 +62,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
     5: 'Lightning (5x)'
   };
 
-  const getBubbleLoadDescription = (strategy: string) => {
+  const getProfileLoadDescription = (strategy: string) => {
     switch (strategy) {
       case 'fresh': return 'Start completely fresh - Longest time, maximum anonymity';
       case 'restore': return 'Restore last state - Medium time';
@@ -80,25 +80,25 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
     }
   };
 
-  const estimateBubbleLoadTime = () => {
+  const estimateProfileLoadTime = () => {
     let baseTime = 30; // seconds
     
-    if (settings.bubbleLoadStrategy === 'fresh') baseTime = 180;
-    else if (settings.bubbleLoadStrategy === 'restore') baseTime = 60;
-    else if (settings.bubbleLoadStrategy === 'quick') baseTime = 10;
+    if (settings.profileLoadStrategy === 'fresh') baseTime = 180;
+    else if (settings.profileLoadStrategy === 'restore') baseTime = 60;
+    else if (settings.profileLoadStrategy === 'quick') baseTime = 10;
     
     if (settings.clearCookies) baseTime += 30;
     if (settings.useIncognito) baseTime += 15;
     
     baseTime = Math.round(baseTime / settings.speed);
     
-    setBubbleLoadTime(baseTime);
+    setProfileLoadTime(baseTime);
     return baseTime;
   };
 
   useEffect(() => {
-    estimateBubbleLoadTime();
-  }, [settings.bubbleLoadStrategy, settings.clearCookies, settings.useIncognito, settings.speed]);
+    estimateProfileLoadTime();
+  }, [settings.profileLoadStrategy, settings.clearCookies, settings.useIncognito, settings.speed]);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -126,19 +126,19 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
         </div>
       </div>
 
-      {/* Bubble Loading Strategy */}
+      {/* Profile Loading Strategy */}
       <div className="mb-6 p-4 bg-green-900/20 border border-green-700 rounded-lg">
         <h4 className="text-sm font-medium text-green-300 mb-3 flex items-center space-x-2">
           <Save className="h-4 w-4" />
-          <span>Bubble Loading Strategy</span>
+          <span>Profile Loading Strategy</span>
         </h4>
         
         <div className="space-y-4">
           <div>
             <label className="block text-sm text-gray-300 mb-2">Load Strategy</label>
             <select
-              value={settings.bubbleLoadStrategy}
-              onChange={(e) => updateSetting('bubbleLoadStrategy', e.target.value as any)}
+              value={settings.profileLoadStrategy}
+              onChange={(e) => updateSetting('profileLoadStrategy', e.target.value as any)}
               disabled={isTraining}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
@@ -147,7 +147,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
               <option value="fresh">Fresh Start - Start completely new</option>
             </select>
             <p className="text-xs text-gray-400 mt-1">
-              {getBubbleLoadDescription(settings.bubbleLoadStrategy)}
+              {getProfileLoadDescription(settings.profileLoadStrategy)}
             </p>
           </div>
 
@@ -165,8 +165,8 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
           </div>
 
           <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded">
-            <span className="text-sm text-gray-300">Estimated bubble load time:</span>
-            <span className="text-green-400 font-bold">{bubbleLoadTime}s</span>
+            <span className="text-sm text-gray-300">Estimated profile load time:</span>
+            <span className="text-green-400 font-bold">{profileLoadTime}s</span>
           </div>
         </div>
       </div>
@@ -290,7 +290,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
         <h5 className="text-blue-300 font-medium text-sm mb-2">Current Configuration</h5>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="text-gray-300">
-            Bubble Strategy: {settings.bubbleLoadStrategy}
+            Profile Strategy: {settings.profileLoadStrategy}
           </div>
           <div className="text-gray-300">
             Cookie Persistence: {settings.cookiePersistence}
@@ -299,7 +299,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
             Speed: {settings.speed}x
           </div>
           <div className="text-gray-300">
-            Load Time: ~{bubbleLoadTime}s
+            Load Time: ~{profileLoadTime}s
           </div>
           <div className="text-gray-300">
             Mode: Extension Only

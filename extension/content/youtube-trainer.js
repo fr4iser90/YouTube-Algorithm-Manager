@@ -35,6 +35,17 @@ class YouTubeAlgorithmTrainer {
     this.likeVideo = likeVideo.bind(this);
     this.subscribeToChannel = subscribeToChannel.bind(this);
     
+    // Check if we need to restore training state
+    try {
+      const storage = await chrome.storage.local.get(['pendingTraining', 'currentPreset']);
+      if (storage.pendingTraining && storage.currentPreset && !this.isTraining) {
+        console.log('🔄 Restoring training state on page load');
+        this.startTraining(storage.currentPreset);
+      }
+    } catch (error) {
+      console.error('Error checking training state:', error);
+    }
+    
     // Send "I'm alive" signal every 3 seconds to web app
     setInterval(() => {
       this.sendAliveSignal();
@@ -207,7 +218,7 @@ class YouTubeAlgorithmTrainer {
         videosWatched: this.videosWatched,
         searchesPerformed: this.searchesPerformed,
         recommendations: finalRecommendations,
-        bubbleScore: calculateBubbleScore(finalRecommendations, preset.targetKeywords || []),
+        profileScore: calculateProfileScore(finalRecommendations, preset.targetKeywords || []),
         language: preset.language || 'en',
         region: preset.region || 'US',
         categories: generateCategories(finalRecommendations)
