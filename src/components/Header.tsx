@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Brain, Download, Upload, Settings, Save, Shield, Eye, EyeOff, AlertTriangle, CheckCircle, X, Chrome } from 'lucide-react';
+import { Brain, Download, Upload, Settings, Save, Shield, Eye, EyeOff, AlertTriangle, CheckCircle, X, Chrome, PlaySquare } from 'lucide-react';
 import { BubbleProfileManager } from './BubbleProfileManager';
 import { BubblePreset, AlgorithmState } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TrainingManager } from './TrainingManager';
 
 interface HeaderProps {
   onExport: () => void;
@@ -14,6 +15,14 @@ interface HeaderProps {
   onCreateProfile: () => void;
   savedProfiles: any[];
   setSavedProfiles: (profiles: any[]) => void;
+  presets: any[];
+  onCreate: () => void;
+  onEdit: (preset: any) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (preset: any) => void;
+  onTrain: (preset: any) => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
 }
 
 interface SecurityCheck {
@@ -34,9 +43,18 @@ export const Header: React.FC<HeaderProps> = ({
   onLoadProfile,
   onCreateProfile,
   savedProfiles,
-  setSavedProfiles
+  setSavedProfiles,
+  presets,
+  onCreate,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onTrain,
+  searchQuery,
+  setSearchQuery
 }) => {
   const [isProfileManagerOpen, setIsProfileManagerOpen] = useState(false);
+  const [isTrainingManagerOpen, setIsTrainingManagerOpen] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(false);
 
   // Security Check - Extension focused
@@ -325,8 +343,18 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-              {/* Browse Anonymous Button */}
+            <div className="flex items-center space-x-4">
+              {/* Aktives Profil Badge */}
+              {(() => {
+                const activeProfile = savedProfiles.find((p: any) => p.isActive);
+                return (
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${activeProfile ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-300'}`}
+                        title={activeProfile ? activeProfile.name : 'Kein Profil geladen'}>
+                    Profil: {activeProfile ? activeProfile.name : 'None'}
+                  </span>
+                );
+              })()}
+              {/* Browse Buttons */}
               <button
                 onClick={handleBrowseAnonymous}
                 className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
@@ -337,8 +365,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <Chrome className="h-4 w-4" />
                 <span>Browse Anonymous</span>
               </button>
-
-              {/* Browse with Profile Button */}
               <button
                 onClick={handleBrowseWithProfile}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
@@ -348,7 +374,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <Save className="h-4 w-4" />
                 <span>Browse with Profile</span>
               </button>
-              
+              {/* Bestehende Buttons */}
               <button
                 onClick={() => setIsProfileManagerOpen(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
@@ -356,23 +382,13 @@ export const Header: React.FC<HeaderProps> = ({
                 <Save className="h-4 w-4" />
                 <span>Profile Manager</span>
               </button>
-              
               <button
-                onClick={onImport}
-                className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+                onClick={() => setIsTrainingManagerOpen(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-md transition-colors"
               >
-                <Upload className="h-4 w-4" />
-                <span>Import</span>
+                <PlaySquare className="h-4 w-4" />
+                <span>Training Manager</span>
               </button>
-              
-              <button
-                onClick={onExport}
-                className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export</span>
-              </button>
-              
               <button
                 onClick={onSettings}
                 className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
@@ -395,6 +411,23 @@ export const Header: React.FC<HeaderProps> = ({
         savedProfiles={savedProfiles}
         setSavedProfiles={setSavedProfiles}
       />
+
+      {isTrainingManagerOpen && (
+        <TrainingManager
+          presets={presets}
+          onImport={onImport}
+          onExport={onExport}
+          onCreate={onCreate}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onTrain={onTrain}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isVisible={isTrainingManagerOpen}
+          onClose={() => setIsTrainingManagerOpen(false)}
+        />
+      )}
 
       {/* Security Warning Modal */}
       <AnimatePresence>
