@@ -35,7 +35,6 @@ interface SecurityCheck {
   trackingBlocked: boolean;
   webrtcDisabled: boolean;
   userAgentRotated: boolean;
-  cookiesManaged: boolean;
   extensionInstalled: boolean;
 }
 
@@ -72,20 +71,17 @@ export const Header: React.FC<HeaderProps> = ({
   const performSecurityCheck = (): SecurityCheck => {
     // Check localStorage for current settings
     const anonymousConfig = JSON.parse(localStorage.getItem('anonymous-config') || '{}');
-    
     // Check if extension is installed
     const extensionInstalled = !!(
       localStorage.getItem('yt-trainer-extension-info') ||
       document.querySelector('#yt-trainer-extension-marker') ||
       (window as any).ytTrainerExtension
     );
-
     return {
       anonymousMode: anonymousConfig.enabled || false,
       trackingBlocked: anonymousConfig.blockTracking || false,
       webrtcDisabled: anonymousConfig.disableWebRTC || false,
       userAgentRotated: anonymousConfig.rotateUserAgent || false,
-      cookiesManaged: anonymousConfig.cookieStrategy !== 'persist' || false,
       extensionInstalled
     };
   };
@@ -130,75 +126,25 @@ export const Header: React.FC<HeaderProps> = ({
 
   const proceedWithAnonymousBrowsing = () => {
     try {
-      // Load saved profile cookies
       const savedProfiles = localStorage.getItem('youtube-profiles');
-      let profileCookies = '';
-      
+      let activeProfileId = '';
       if (savedProfiles) {
         const profiles = JSON.parse(savedProfiles);
         const activeProfile = profiles.find((p: any) => p.isActive);
-        
-        if (activeProfile && activeProfile.cookies) {
-          profileCookies = atob(activeProfile.cookies);
-          console.log('🍪 Loading profile cookies for anonymous browsing');
+        if (activeProfile) {
+          activeProfileId = activeProfile.id;
         }
       }
-
       // Create YouTube URL with profile parameters
       const youtubeUrl = new URL('https://www.youtube.com');
-      
-      if (profileCookies) {
-        youtubeUrl.searchParams.set('profile_restore', 'true');
+      if (activeProfileId) {
+        youtubeUrl.searchParams.set('profile_id', activeProfileId);
         youtubeUrl.searchParams.set('profile_mode', 'anonymous');
       }
-
-      // Open YouTube with profile data
-      const newWindow = window.open(youtubeUrl.toString(), '_blank');
-      
-      if (newWindow) {
-        setTimeout(() => {
-          try {
-            console.log('🎯 Profile cookies injected into anonymous window');
-            console.log('✅ Anonymous browsing with loaded profile active!');
-          } catch (error) {
-            console.log('⚠️ Cookie injection failed, but window opened');
-          }
-        }, 1000);
-      }
-
+      window.open(youtubeUrl.toString(), '_blank');
       console.log('🕵️ Opening YouTube ANONYMOUSLY with LOADED PROFILE...');
-      
     } catch (error) {
       console.error('❌ Failed to load profile for anonymous browsing:', error);
-      window.open('https://www.youtube.com', '_blank');
-    }
-  };
-
-  const handleBrowseWithProfile = () => {
-    try {
-      const savedProfiles = localStorage.getItem('youtube-profiles');
-      
-      if (savedProfiles) {
-        const profiles = JSON.parse(savedProfiles);
-        const activeProfile = profiles.find((p: any) => p.isActive);
-        
-        if (activeProfile) {
-          console.log('🍪 Opening YouTube with full profile data...');
-          
-          const youtubeUrl = new URL('https://www.youtube.com');
-          youtubeUrl.searchParams.set('profile_id', activeProfile.id);
-          youtubeUrl.searchParams.set('profile_strength', activeProfile.profileStrength.toString());
-          
-          window.open(youtubeUrl.toString(), '_blank');
-          return;
-        }
-      }
-      
-      window.open('https://www.youtube.com', '_blank');
-      console.log('🔗 Opening YouTube with current browser profile...');
-      
-    } catch (error) {
-      console.error('❌ Failed to load profile:', error);
       window.open('https://www.youtube.com', '_blank');
     }
   };
@@ -218,7 +164,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Angepasst: Browse-Handler
   const handleBrowseAnonymousWrapped = () => requireProfile(handleBrowseAnonymous);
-  const handleBrowseWithProfileWrapped = () => requireProfile(handleBrowseWithProfile);
 
   // Wenn im Modal ein Profil gewählt wird
   const handleProfileSelect = (profile: any) => {
@@ -437,15 +382,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <EyeOff className="h-4 w-4" />
                 <Chrome className="h-4 w-4" />
                 <span>Browse Anonymous</span>
-              </button>
-              <button
-                onClick={handleBrowseWithProfileWrapped}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                title="Öffnet YouTube mit vollständigem Profile"
-              >
-                <Eye className="h-4 w-4" />
-                <Save className="h-4 w-4" />
-                <span>Browse with Profile</span>
               </button>
               {/* Bestehende Buttons */}
               <button

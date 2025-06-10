@@ -163,26 +163,33 @@ class YouTubeAlgorithmTrainer {
   async searchPreferredChannels() {
     if (!this.currentPreset.channelPreferences) return;
     
-    console.log('🔍 Searching for preferred channels...');
+    console.log('🔍 Starting channel search phase...');
     
     for (const pref of this.currentPreset.channelPreferences) {
+      if (!this.isTraining) break;
+      
       if (pref.action === 'prioritize' || pref.action === 'subscribe') {
         try {
+          console.log(`🔍 Searching for channel: "${pref.channelName}"`);
+          
           // Search for the channel
-          await performSearch.call(this, pref.channelName);
-          await delay(2000);
+          await this.performSearch(pref.channelName);
+          await this.delay(2000);
           
           // Click on the first channel result
           const channelResults = document.querySelectorAll('ytd-channel-renderer');
           if (channelResults.length > 0) {
             const channelLink = channelResults[0].querySelector('a#main-link');
             if (channelLink) {
+              console.log(`✅ Found channel: "${pref.channelName}"`);
               channelLink.click();
-              await delay(3000);
+              await this.delay(3000);
               
               // Watch a few videos from the channel
               const channelVideos = document.querySelectorAll('ytd-rich-item-renderer');
               const videosToWatch = Math.min(2, channelVideos.length);
+              
+              console.log(`📺 Watching ${videosToWatch} videos from channel: "${pref.channelName}"`);
               
               for (let i = 0; i < videosToWatch; i++) {
                 if (!this.isTraining) break;
@@ -191,23 +198,30 @@ class YouTubeAlgorithmTrainer {
                 const videoLink = video.querySelector('a#video-title');
                 if (videoLink) {
                   videoLink.click();
-                  await delay(3000);
+                  await this.delay(3000);
                   await this.watchVideo(60); // Watch for 60 seconds
                   window.history.back();
-                  await delay(2000);
+                  await this.delay(2000);
                 }
               }
               
-              // Go back to homepage
-              window.location.href = 'https://www.youtube.com';
-              await delay(3000);
+              // Go back to search results
+              console.log('🔙 Returning to search results');
+              window.history.back();
+              await this.delay(2000);
             }
+          } else {
+            console.log(`⚠️ No channel results found for: "${pref.channelName}"`);
+            window.history.back();
+            await this.delay(2000);
           }
         } catch (error) {
-          console.error(`Error searching for channel ${pref.channelName}:`, error);
+          console.error(`❌ Error searching for channel ${pref.channelName}:`, error);
         }
       }
     }
+    
+    console.log('✅ Channel search phase completed');
   }
 
   async startTraining(preset) {
@@ -244,6 +258,9 @@ class YouTubeAlgorithmTrainer {
       // Warte auf Suchfeld
       this.sendProgress(12, 'Warte auf Suchfeld...');
 
+      // Handle cookie consent at the start
+      await window.cookieManager.handleCookieConsent();
+
       // Step 2: Clear history if requested
       if (preset.advancedOptions?.clearHistoryFirst) {
         this.sendProgress(15, 'Clearing browsing data...');
@@ -252,7 +269,7 @@ class YouTubeAlgorithmTrainer {
             resolve();
           });
         });
-        await delay(2000);
+        await this.delay(2000);
       }
       
       // NEW STEP: Search for preferred channels first
@@ -282,11 +299,11 @@ class YouTubeAlgorithmTrainer {
             break;
           }
 
-          await performSearch.call(this, search.query);
+          await this.performSearch(search.query);
           // Search is 30% of the step
           this.sendProgress(stepProgress, `Searching: "${search.query}"`);
           
-          await watchRecommendedVideos.call(this, search.frequency || 2, search.duration || 60);
+          await this.watchRecommendedVideos(search.frequency || 2, search.duration || 60);
           // Watching videos is 70% of the step
           this.sendProgress(stepProgress + (60 / totalSteps * 0.7), `Watched videos for: "${search.query}"`);
           
@@ -300,7 +317,7 @@ class YouTubeAlgorithmTrainer {
             break;
           }
           
-          await humanDelay();
+          await this.humanDelay();
           
         } catch (error) {
           console.error(`❌ Error in training step ${i + 1}:`, error);
@@ -354,14 +371,14 @@ class YouTubeAlgorithmTrainer {
         videosWatched: this.videosWatched,
         searchesPerformed: this.searchesPerformed,
         recommendations: finalRecommendations,
-        profileScore: calculateProfileScore(finalRecommendations, preset.targetKeywords || []),
+        profileScore: this.calculateProfileScore(finalRecommendations, preset.targetKeywords || []),
         language: preset.language || 'en',
         region: preset.region || 'US',
-        categories: generateCategories(finalRecommendations)
+        categories: this.generateCategories(finalRecommendations)
       };
       
       // Ensure we send results before stopping
-      await sendResults(results);
+      await this.sendResults(results);
       
       console.log('✅ Training completed successfully!', results);
       
@@ -376,26 +393,15 @@ class YouTubeAlgorithmTrainer {
 
   stopTraining() {
     this.isTraining = false;
-    this.sendAliveSignal(); // Update status
-    console.log('⏹️ Training stopped');
+    this.currentPreset = null;
+    this.progress = 0;
+    this.startTime = null;
+    this.videosWatched = 0;
+    this.searchesPerformed = 0;
+    this.recommendations = [];
+    this.watchedVideoIds = [];
     
-    window.postMessage({ type: 'YT_TRAINER_STOPPED' }, '*');
-    
-    try {
-      const channel = new BroadcastChannel('yt-trainer-channel');
-      channel.postMessage({
-        type: 'TRAINING_STOPPED'
-      });
-    } catch (error) {
-      // BroadcastChannel not supported
-    }
+    // Notify web app that training stopped
+    this.sendProgress(0, 'Training stopped.');
   }
-}
-
-// Initialize trainer when script loads
-try {
-  const trainer = new YouTubeAlgorithmTrainer();
-  console.log('🎯 YouTube Algorithm Trainer content script loaded successfully!');
-} catch (error) {
-  console.error('❌ Error initializing trainer:', error);
 }

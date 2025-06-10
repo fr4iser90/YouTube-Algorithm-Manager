@@ -3,7 +3,6 @@ export interface SecurityCheck {
   trackingBlocked: boolean;
   webrtcDisabled: boolean;
   userAgentRotated: boolean;
-  cookiesManaged: boolean;
   extensionInstalled: boolean;
 }
 

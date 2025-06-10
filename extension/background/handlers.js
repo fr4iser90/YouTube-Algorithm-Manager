@@ -43,12 +43,11 @@ export function setupMessageHandlers() {
           chrome.browsingData.remove({
             "since": 0
           }, {
-          "history": true,
-          "downloads": true,
-          "cache": true,
-          "cookies": true,
-          "passwords": true,
-          "formData": true
+            "history": true,
+            "downloads": true,
+            "cache": true,
+            "passwords": true,
+            "formData": true
           }, () => {
             console.log('Browsing data cleared');
             sendResponse({ success: true });
@@ -82,9 +81,18 @@ export function setupMessageHandlers() {
       case 'SAVE_PROFILES':
         profileManager.getProfiles().then(existingProfiles => {
           const updatedProfiles = [...existingProfiles, ...message.profiles];
-          profileManager.saveProfiles(updatedProfiles).then(response => {
-            sendResponse(response);
-          });
+          profileManager.saveProfiles(updatedProfiles)
+            .then(() => {
+              sendResponse({ success: true });
+            })
+            .catch(error => {
+              console.error('Error saving profiles:', error);
+              sendResponse({ success: false, error: error.message });
+            });
+        })
+        .catch(error => {
+          console.error('Error getting existing profiles:', error);
+          sendResponse({ success: false, error: error.message });
         });
         return true;
 
@@ -106,6 +114,12 @@ export function setupMessageHandlers() {
         });
         sendResponse({ success: true });
         break;
+
+      case 'SWITCH_PROFILE':
+        profileManager.switchProfile(message.profileId).then(response => {
+          sendResponse(response);
+        });
+        return true;
 
       default:
         sendResponse({ success: false, error: 'Unknown message type' });

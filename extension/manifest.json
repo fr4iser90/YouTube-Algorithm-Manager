@@ -7,7 +7,6 @@
   "permissions": [
     "activeTab",
     "storage",
-    "cookies",
     "webRequest",
     "downloads",
     "alarms",
@@ -37,12 +36,15 @@
       ],
       "exclude_matches": ["*://*.youtube.com/feed/history"],
       "js": [
+          "content/cookies.js",
           "content/utils.js",
           "content/helpers.js",
           "content/watch-score.js",
           "content/ad-detection.js",
           "content/warmup.js",
           "content/actions.js",
+          "content/stopwords.js",
+          "content/clickbait-phrases.js",
           "content/pre-training-analyzer.js",
           "content/youtube-trainer.js"
       ],

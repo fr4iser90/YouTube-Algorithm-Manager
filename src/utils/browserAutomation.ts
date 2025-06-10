@@ -113,7 +113,7 @@ export class YouTubeBrowserController {
   }
 
   async clearHistory(): Promise<void> {
-    console.log('Clearing browser history and cookies');
+    console.log('Clearing browser history');
     await this.delay(3000);
   }
 

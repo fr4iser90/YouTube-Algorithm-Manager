@@ -41,10 +41,6 @@ export const ProfileCreationModal: React.FC<ProfileCreationModalProps> = ({
   const handleSave = () => {
     if (!formData.name.trim()) return;
 
-    const cookies = document.cookie;
-    const localStorageData = JSON.stringify(localStorage);
-    const sessionStorageData = JSON.stringify(sessionStorage);
-
     const newProfile: BrowserProfile = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name: formData.name.trim(),
@@ -58,9 +54,6 @@ export const ProfileCreationModal: React.FC<ProfileCreationModalProps> = ({
         blockedChannels: [],
         prioritizedChannels: []
       },
-      cookies: btoa(encodeURIComponent(cookies)),
-      localStorage: btoa(encodeURIComponent(localStorageData)),
-      sessionStorage: btoa(encodeURIComponent(sessionStorageData)),
       createdAt: new Date(),
       lastUsed: new Date(),
       profileStrength: currentAlgorithmState?.profileScore || 0,

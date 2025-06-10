@@ -56,8 +56,7 @@ This browser extension automates interactions with YouTube for research and cont
 - 📊 Extracts recommendations
 
 ### **✅ REAL BROWSER INTEGRATION:**
-- 🍪 Works with real YouTube cookies
-- 🎯 Trains actual algorithm (not simulation)
+- 🎯 Trains actual algorithm
 - 🛡️ Respects user privacy settings
 - 📱 Works on any YouTube page
 
@@ -94,7 +93,6 @@ This browser extension automates interactions with YouTube for research and cont
 
 ### **✅ PRIVACY FEATURES:**
 - 🔒 No data sent to external servers
-- 🍪 Respects existing cookie settings
 - 🛡️ Works with incognito mode
 - 📱 Local storage only
 

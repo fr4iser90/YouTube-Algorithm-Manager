@@ -25,6 +25,7 @@ async function performSearch(query) {
   console.log(`🔍 Searching for: "${query}"`);
   try {
     await delay(2000);
+    
     const searchBox = await waitForElement('input[name="search_query"]');
     searchBox.value = '';
     searchBox.focus();
@@ -95,99 +96,31 @@ async function watchRecommendedVideos(count, duration) {
   }
 }
 
-async function watchVideo(duration) {
+async function watchVideo(duration = 60) {
   try {
-    const video = await waitForElement('video', 5000);
-    video.muted = true;
-    if (this.currentPreset.advancedOptions?.playbackSpeed) {
-      video.playbackRate = this.currentPreset.advancedOptions.playbackSpeed;
-    }
-    if (video.paused) {
-      video.play();
-    }
-
-    // Get current video data
-    const videoData = {
-      videoId: getVideoId(window.location.href),
-      title: document.querySelector('h1.title')?.textContent?.trim() || '',
-      channel: document.querySelector('#channel-name a')?.textContent?.trim() || '',
-      category: document.querySelector('#top-level-buttons-computed')?.textContent?.includes('Gaming') ? 'Gaming' : 'Other',
-      watchTime: duration,
-      timestamp: new Date(),
-      url: window.location.href
-    };
-
-    // Check if profile is frozen
-    const storage = await chrome.storage.local.get(['profiles', 'activeProfileId', 'freezeProfile']);
-    const isFrozen = storage.freezeProfile === true;
-
-    if (!isFrozen && storage.profiles && storage.activeProfileId) {
-      const profiles = storage.profiles;
-      const activeProfile = profiles.find(p => p.id === storage.activeProfileId);
-      
-      if (activeProfile) {
-        // Update profile data
-        activeProfile.totalVideosWatched++;
-        activeProfile.watchHistory = [
-          {
-            videoId: videoData.videoId,
-            title: videoData.title,
-            url: videoData.url,
-            watchTime: videoData.watchTime,
-            category: videoData.category,
-            channel: videoData.channel,
-            timestamp: videoData.timestamp
-          },
-          ...(activeProfile.watchHistory || []).slice(0, 49) // Keep last 50 videos
-        ];
-
-        // Update preferred categories and channels
-        if (!activeProfile.preferredCategories.includes(videoData.category)) {
-          activeProfile.preferredCategories.push(videoData.category);
-        }
-        if (!activeProfile.preferredChannels.includes(videoData.channel)) {
-          activeProfile.preferredChannels.push(videoData.channel);
-        }
-
-        // Update average watch time
-        const totalWatchTime = activeProfile.watchHistory.reduce((sum, v) => sum + v.watchTime, 0);
-        activeProfile.averageWatchTime = totalWatchTime / activeProfile.watchHistory.length;
-
-        // Save updated profile
-        const updatedProfiles = profiles.map(p => p.id === activeProfile.id ? activeProfile : p);
-        await chrome.storage.local.set({ profiles: updatedProfiles });
-        
-        // Notify background script
-        chrome.runtime.sendMessage({
-          type: 'PROFILE_UPDATED',
-          profile: activeProfile,
-          videoData: videoData
-        });
-      }
-    }
-
-    let adSkipInterval;
-    if (this.currentPreset.advancedOptions?.skipAds) {
-      adSkipInterval = window.adDetector.startAdDetection(video);
-    }
+    // Wait for video to load
+    await this.delay(3000);
     
-    const watchTime = Math.min(duration, 120) * 1000;
-    const watchdog = setTimeout(() => {
-      console.log('Watchdog timer triggered, something is wrong');
-      window.history.back();
-    }, watchTime + 30000);
+    // Get video info
+    const videoInfo = await this.getVideoInfo();
     
-    await delay(watchTime);
+    // Update profile data
+    this.videosWatched++;
+    this.watchedVideoIds.push(videoInfo.id);
     
-    clearTimeout(watchdog);
-    if (adSkipInterval) {
-      clearInterval(adSkipInterval);
-    }
+    // Watch for specified duration
+    await this.delay(duration * 1000);
     
-    console.log(`✅ Watched video for ${duration}s`);
+    // Notify background script
+    chrome.runtime.sendMessage({
+      type: 'VIDEO_WATCHED',
+      videoInfo
+    });
     
+    return videoInfo;
   } catch (error) {
-    console.error('❌ Error watching video:', error);
+    console.error('Error watching video:', error);
+    throw error;
   }
 }
 

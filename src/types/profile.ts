@@ -4,10 +4,6 @@ export interface BrowserProfile {
   id: string;
   name: string;
   description: string;
-  // Browser data
-  cookies: string;
-  localStorage: string;
-  sessionStorage: string;
   userAgent: string;
   viewport: { width: number; height: number };
   
@@ -57,8 +53,6 @@ export interface ProfileSnapshot {
   profileId: string;
   name: string;
   category: string;
-  cookies: string;
-  localStorage: string;
   createdAt: Date;
   lastUsed: Date;
   // Snapshot of preferences

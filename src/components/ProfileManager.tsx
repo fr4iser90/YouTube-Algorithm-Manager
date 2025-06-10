@@ -49,15 +49,9 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({
   const saveCurrentProfile = () => {
     if (!currentPreset || !newProfileName.trim()) return;
 
-    // Get ALL cookies and storage data
-    const cookies = document.cookie;
-    const localStorageData = JSON.stringify(localStorage);
-    const sessionStorageData = JSON.stringify(sessionStorage);
+
 
     console.log('--- Saving Profile ---');
-    console.log('🍪 Cookies:', cookies);
-    console.log('🗄️ localStorage:', localStorageData);
-    console.log('🗂️ sessionStorage:', sessionStorageData);
 
     const newProfile: BrowserProfile = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -86,10 +80,6 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({
         avoidedChannels: [],
         avoidedKeywords: []
       },
-      // Save ALL data 1:1
-      cookies: btoa(encodeURIComponent(cookies)),
-      localStorage: btoa(encodeURIComponent(localStorageData)),
-      sessionStorage: btoa(encodeURIComponent(sessionStorageData)),
       userAgent: navigator.userAgent,
       viewport: {
         width: window.innerWidth,
@@ -266,7 +256,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({
             <Save className="h-6 w-6 text-blue-400" />
             <div>
               <h2 className="text-xl font-bold text-white">Profile Manager</h2>
-              <p className="text-sm text-gray-400">Load saved profiles with persistent cookies</p>
+              <p className="text-sm text-gray-400">Load saved profiles</p>
             </div>
           </div>
           
@@ -434,7 +424,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({
                     </div>
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Globe className="h-3 w-3" />
-                      <span>{profile.language.toUpperCase()}/{profile.region}</span>
+                      <span>{(profile.language || 'en').toUpperCase()}/{profile.region || 'US'}</span>
                     </div>
                     <div className="flex items-center space-x-1 text-gray-300">
                       <Clock className="h-3 w-3" />

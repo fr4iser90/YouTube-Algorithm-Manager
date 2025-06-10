@@ -10,7 +10,6 @@ interface AnonymousModeProps {
 interface AnonymousConfig {
   enabled: boolean;
   rotateUserAgent: boolean;
-  cookieStrategy: 'persist' | 'session' | 'clear' | 'rotate';
   profiles: BrowserProfile[];
   activeProfile: string | null;
   useVPN: boolean;
@@ -26,15 +25,11 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
   const [config, setConfig] = useState<AnonymousConfig>({
     enabled: true,
     rotateUserAgent: true,
-    cookieStrategy: 'persist',
     profiles: [
       {
         id: 'tech-profile',
         name: 'Tech Profile',
         description: 'Profile for tech content',
-        cookies: 'dGVjaC1jb29raWVz', // Mock base64
-        localStorage: 'dGVjaC1sb2NhbA==',
-        sessionStorage: '',
         userAgent: '',
         viewport: { width: 1920, height: 1080 },
         createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -50,7 +45,12 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
         preferredKeywords: ['AI', 'programming', 'tech'],
         watchHistory: [],
         avoidedChannels: [],
-        avoidedKeywords: []
+        avoidedKeywords: [],
+        profileStrength: 0,
+        color: '#3B82F6',
+        language: 'en',
+        region: 'US',
+        category: 'tech',
       }
     ],
     activeProfile: null,
@@ -73,8 +73,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
     const newConfig = { ...config, [key]: value };
     setConfig(newConfig);
     onConfigChange(newConfig);
-    
-    // Calculate anonymity score
     calculateAnonymityScore(newConfig);
   };
 
@@ -82,14 +80,11 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
     let score = 0;
     if (cfg.enabled) score += 20;
     if (cfg.rotateUserAgent) score += 15;
-    if (cfg.cookieStrategy !== 'persist') score += 10;
-    if (cfg.cookieStrategy === 'rotate') score += 15;
     if (cfg.useVPN) score += 25;
     if (cfg.randomizeViewport) score += 10;
     if (cfg.disableWebRTC) score += 15;
     if (cfg.spoofTimezone) score += 10;
     if (cfg.blockTracking) score += 15;
-    
     setAnonymityScore(Math.min(100, score));
   };
 
@@ -102,9 +97,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
       id: Date.now().toString(),
       name,
       description,
-      cookies: btoa(`cookies-${Date.now()}`), // Mock cookie data
-      localStorage: btoa(`localStorage-${Date.now()}`),
-      sessionStorage: '',
       userAgent: '',
       viewport: { width: 1920, height: 1080 },
       createdAt: new Date(),
@@ -120,16 +112,19 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
       preferredKeywords: [],
       watchHistory: [],
       avoidedChannels: [],
-      avoidedKeywords: []
+      avoidedKeywords: [],
+      profileStrength: 0,
+      color: '#3B82F6',
+      language: 'en',
+      region: 'US',
+      category: 'general',
     };
-
     updateConfig('profiles', [...config.profiles, newProfile]);
   };
 
   const deleteProfile = (profileId: string) => {
     const updatedProfiles = config.profiles.filter(p => p.id !== profileId);
     updateConfig('profiles', updatedProfiles);
-    
     if (config.activeProfile === profileId) {
       updateConfig('activeProfile', null);
     }
@@ -147,22 +142,11 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
     return <AlertTriangle className="h-5 w-5 text-red-400" />;
   };
 
-  const getCookieStrategyDescription = (strategy: string) => {
-    switch (strategy) {
-      case 'persist': return 'Profile cookies persist - Low anonymity';
-      case 'profile': return 'Profile cookies only - Medium anonymity';
-      case 'clear': return 'No cookies - High anonymity';
-      case 'rotate': return 'Rotating cookies - Maximum anonymity';
-      default: return '';
-    }
-  };
-
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
-    
     if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
     if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
     return 'just now';
@@ -175,7 +159,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           <Shield className="h-5 w-5 text-purple-400" />
           <h3 className="text-lg font-semibold text-white">Smart Anonymous Mode</h3>
         </div>
-        
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             {getScoreIcon(anonymityScore)}
@@ -194,7 +177,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           </div>
         </div>
       </div>
-
       {/* Anonymity Score Visualization */}
       <div className="mb-6 p-4 bg-gray-700/50 rounded-lg">
         <div className="flex items-center justify-between mb-2">
@@ -215,56 +197,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           />
         </div>
       </div>
-
-      {/* Cookie Strategy - Key Feature */}
-      <div className="mb-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
-        <h4 className="text-sm font-medium text-blue-300 mb-3 flex items-center space-x-2">
-          <Save className="h-4 w-4" />
-          <span>Cookie & Profile Management</span>
-        </h4>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">Cookie Strategy</label>
-            <select
-              value={config.cookieStrategy}
-              onChange={(e) => updateConfig('cookieStrategy', e.target.value as any)}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="persist">Persistent - Keep all cookies</option>
-              <option value="profile">Profile - Browser runtime only</option>
-              <option value="clear">Clear - No cookies</option>
-              <option value="rotate">Rotate - Random cookies</option>
-            </select>
-            <p className="text-xs text-gray-400 mt-1">
-              {getCookieStrategyDescription(config.cookieStrategy)}
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-300">Auto-Save Profiles</label>
-            <input
-              type="checkbox"
-              checked={config.autoSaveProfiles}
-              onChange={(e) => updateConfig('autoSaveProfiles', e.target.checked)}
-              disabled={!config.enabled}
-              className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-300">Quick Load Enabled</label>
-            <input
-              type="checkbox"
-              checked={config.quickLoadEnabled}
-              onChange={(e) => updateConfig('quickLoadEnabled', e.target.checked)}
-              disabled={!config.enabled}
-              className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Profile Manager */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
@@ -276,7 +208,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
             {showProfileManager ? 'Hide' : 'Manage'}
           </button>
         </div>
-
         {config.profiles.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             {config.profiles.slice(0, showProfileManager ? undefined : 2).map(profile => (
@@ -301,7 +232,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
                     }`} />
                     <span className="text-white font-medium text-sm">{profile.name}</span>
                   </div>
-                  
                   {showProfileManager && (
                     <button
                       onClick={(e) => {
@@ -314,7 +244,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
                     </button>
                   )}
                 </div>
-                
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400 flex items-center space-x-1">
                     <Clock className="h-3 w-3" />
@@ -327,17 +256,15 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
                     {profile.totalVideosWatched} videos watched
                   </span>
                 </div>
-                
                 {config.activeProfile === profile.id && (
                   <div className="mt-2 text-xs text-purple-300">
-                    ✓ Active Profile - Cookies loaded
+                    ✓ Active Profile
                   </div>
                 )}
               </motion.div>
             ))}
           </div>
         )}
-
         {config.quickLoadEnabled && (
           <div className="p-3 bg-green-900/20 border border-green-700 rounded-lg">
             <div className="flex items-center space-x-2 text-green-300 text-sm">
@@ -350,15 +277,13 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           </div>
         )}
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Browser Fingerprinting */}
         <div className="space-y-4">
           <h4 className="text-sm font-medium text-gray-300 flex items-center space-x-2">
-            <Eye className="h-4 w-4" />
+            <Eye className="h-5 w-4" />
             <span>Browser Fingerprinting</span>
           </h4>
-
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300">Rotate User Agent</label>
@@ -370,7 +295,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
                 className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
               />
             </div>
-
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300">Randomize Viewport</label>
               <input
@@ -381,7 +305,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
                 className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
               />
             </div>
-
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300">Disable WebRTC</label>
               <input
@@ -392,7 +315,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
                 className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
               />
             </div>
-
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300">Spoof Timezone</label>
               <input
@@ -405,14 +327,12 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
             </div>
           </div>
         </div>
-
         {/* Privacy & Tracking */}
         <div className="space-y-4">
           <h4 className="text-sm font-medium text-gray-300 flex items-center space-x-2">
             <EyeOff className="h-4 w-4" />
             <span>Privacy & Tracking</span>
           </h4>
-
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300">Block Tracking</label>
@@ -424,7 +344,6 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
                 className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
               />
             </div>
-
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300 flex items-center space-x-1">
                 <span>Use VPN</span>
@@ -441,17 +360,16 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           </div>
         </div>
       </div>
-
       {/* Strategy Explanation */}
       <div className="mt-6 p-4 bg-yellow-900/20 border border-yellow-700 rounded-lg">
         <div className="flex items-start space-x-3">
           <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5" />
           <div>
-            <h5 className="text-yellow-300 font-medium text-sm">Cookie Strategy Guide</h5>
+            <h5 className="text-yellow-300 font-medium text-sm">Anonymity Guide</h5>
             <div className="text-yellow-200 text-xs mt-2 space-y-1">
-              <div><strong>Persistent Cookies:</strong> Profile stays active, fastest startup</div>
-              <div><strong>Profile Cookies:</strong> Profile only during browser session</div>
-              <div><strong>Clear Cookies:</strong> Maximum anonymity, but profile must rebuild</div>
+              <div><strong>Persistent Profiles:</strong> Profile stays active, fastest startup</div>
+              <div><strong>Profile Only:</strong> Profile only during browser session</div>
+              <div><strong>Clear Profiles:</strong> Maximum anonymity, but profile must rebuild</div>
               <div><strong>Rotate Profiles:</strong> Switch between different profiles</div>
             </div>
             <div className="mt-3 p-2 bg-yellow-900/30 rounded text-xs text-yellow-100">
@@ -460,15 +378,11 @@ export const AnonymousMode: React.FC<AnonymousModeProps> = ({ onConfigChange }) 
           </div>
         </div>
       </div>
-
       {/* Current Configuration Summary */}
       {config.enabled && (
         <div className="mt-6 p-4 bg-purple-900/20 border border-purple-700 rounded-lg">
           <h5 className="text-purple-300 font-medium text-sm mb-2">Active Configuration</h5>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="text-gray-300">
-              Cookie Strategy: {config.cookieStrategy}
-            </div>
             <div className="text-gray-300">
               User Agent: {config.rotateUserAgent ? 'Rotating' : 'Static'}
             </div>

@@ -6,12 +6,9 @@ interface BrowserSettings {
   useIncognito: boolean;
   muteAudio: boolean;
   speed: number; // 1-5x speed
-  // headless: boolean; // Invisible browser
-  clearCookies: boolean;
   blockAds: boolean;
   userAgent: string;
   viewport: { width: number; height: number };
-  cookiePersistence: 'none' | 'session' | 'persistent';
   profileLoadStrategy: 'fresh' | 'restore' | 'quick';
   profileManagement: 'isolated' | 'shared' | 'profile-based';
   autoBackup: boolean;
@@ -27,17 +24,14 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
   isTraining
 }) => {
   const [settings, setSettings] = useState<BrowserSettings>({
-    useIncognito: false, // Changed default - not needed for non-logged users
+    useIncognito: false,
     muteAudio: true,
     speed: 2,
-    // headless: false,
-    clearCookies: false, // Changed default - keep cookies for profile persistence
     blockAds: true,
     userAgent: 'default',
     viewport: { width: 1920, height: 1080 },
-    cookiePersistence: 'persistent', // Keep cookies for profile loading
-    profileLoadStrategy: 'quick', // Quick profile loading
-    profileManagement: 'profile-based', // Profile-based session management
+    profileLoadStrategy: 'quick',
+    profileManagement: 'profile-based',
     autoBackup: false,
   });
 
@@ -66,7 +60,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
     switch (strategy) {
       case 'fresh': return 'Start completely fresh - Longest time, maximum anonymity';
       case 'restore': return 'Restore last state - Medium time';
-      case 'quick': return 'Load instantly with saved cookies - Fastest time';
+      case 'quick': return 'Load instantly - Fastest time';
       default: return '';
     }
   };
@@ -82,23 +76,18 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
 
   const estimateProfileLoadTime = () => {
     let baseTime = 30; // seconds
-    
     if (settings.profileLoadStrategy === 'fresh') baseTime = 180;
     else if (settings.profileLoadStrategy === 'restore') baseTime = 60;
     else if (settings.profileLoadStrategy === 'quick') baseTime = 10;
-    
-    if (settings.clearCookies) baseTime += 30;
     if (settings.useIncognito) baseTime += 15;
-    
     baseTime = Math.round(baseTime / settings.speed);
-    
     setProfileLoadTime(baseTime);
     return baseTime;
   };
 
   useEffect(() => {
     estimateProfileLoadTime();
-  }, [settings.profileLoadStrategy, settings.clearCookies, settings.useIncognito, settings.speed]);
+  }, [settings.profileLoadStrategy, settings.useIncognito, settings.speed]);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -119,7 +108,6 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
             <div className="text-blue-200 text-xs mt-2 space-y-1">
               <div>• <strong>Real Training:</strong> Extension controls your actual browser</div>
               <div>• <strong>No Simulation:</strong> All actions happen on real YouTube</div>
-              <div>• <strong>Cookie Persistence:</strong> Uses your browser's actual cookies</div>
               <div>• <strong>Authentic Behavior:</strong> Indistinguishable from manual usage</div>
             </div>
           </div>
@@ -132,7 +120,6 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
           <Save className="h-4 w-4" />
           <span>Profile Loading Strategy</span>
         </h4>
-        
         <div className="space-y-4">
           <div>
             <label className="block text-sm text-gray-300 mb-2">Load Strategy</label>
@@ -142,7 +129,7 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
               disabled={isTraining}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="quick">Quick Load - Instant with cookies (recommended)</option>
+              <option value="quick">Quick Load - Instant</option>
               <option value="restore">Restore - Restore last state</option>
               <option value="fresh">Fresh Start - Start completely new</option>
             </select>
@@ -150,20 +137,6 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
               {getProfileLoadDescription(settings.profileLoadStrategy)}
             </p>
           </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">Cookie Persistence</label>
-            <select
-              value={settings.cookiePersistence}
-              onChange={(e) => updateSetting('cookiePersistence', e.target.value as any)}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="none">None - No cookies</option>
-              <option value="profile">Profile - Only during browser runtime</option>
-              <option value="persistent">Persistent - Keep all cookies</option>
-            </select>
-          </div>
-
           <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded">
             <span className="text-sm text-gray-300">Estimated profile load time:</span>
             <span className="text-green-400 font-bold">{profileLoadTime}s</span>
@@ -178,7 +151,6 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
             <Shield className="h-4 w-4" />
             <span>Privacy & Security</span>
           </h4>
-
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300">Block Ads</label>
@@ -190,7 +162,6 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
                 className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
             </div>
-
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300">Auto-backup Profiles</label>
               <input
@@ -201,18 +172,14 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
                 className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
             </div>
-
-            {/* Headless-Option entfernt */}
           </div>
         </div>
-
         {/* Performance */}
         <div className="space-y-4">
           <h4 className="text-sm font-medium text-gray-300 flex items-center space-x-2">
             <Clock className="h-4 w-4" />
             <span>Performance</span>
           </h4>
-
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm text-gray-300 flex items-center space-x-1">
@@ -227,7 +194,6 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
                 className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
             </div>
-
             <div>
               <label className="block text-sm text-gray-300 mb-2 flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
@@ -247,7 +213,6 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
                 <span>Fast</span>
               </div>
             </div>
-
             <div>
               <label className="block text-sm text-gray-300 mb-2">User Agent</label>
               <select
@@ -267,7 +232,6 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
           </div>
         </div>
       </div>
-
       {/* Browser Launch Status */}
       {isTraining && (
         <motion.div
@@ -279,21 +243,16 @@ export const BrowserController: React.FC<BrowserControllerProps> = ({
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
             <span className="text-blue-300 text-sm">
               Extension training active
-              {settings.cookiePersistence === 'persistent' && ' with cookie persistence'}
             </span>
           </div>
         </motion.div>
       )}
-
       {/* Current Configuration Summary */}
       <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
         <h5 className="text-blue-300 font-medium text-sm mb-2">Current Configuration</h5>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="text-gray-300">
             Profile Strategy: {settings.profileLoadStrategy}
-          </div>
-          <div className="text-gray-300">
-            Cookie Persistence: {settings.cookiePersistence}
           </div>
           <div className="text-gray-300">
             Speed: {settings.speed}x

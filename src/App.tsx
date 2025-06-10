@@ -443,7 +443,7 @@ function App() {
               <div>
                 <h3 className="text-green-300 font-medium">Profile Active</h3>
                 <p className="text-green-200 text-sm">
-                  Profile loaded instantly with persistent cookies. Ready for training or browsing.
+                  Profile loaded instantly. Ready for training or browsing.
                 </p>
               </div>
             </div>
@@ -531,7 +531,7 @@ function App() {
                   <div className="p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
                     <h4 className="text-blue-300 font-medium text-sm mb-2">🎯 How It Works</h4>
                     <ul className="text-blue-200 text-xs space-y-1">
-                      <li>• Extension runs in your real browser with your cookies</li>
+                      <li>• Extension runs in your real browser</li>
                       <li>• Performs actual searches and watches real videos</li>
                       <li>• Trains the algorithm that affects your actual recommendations</li>
                       <li>• No servers, no APIs - everything happens locally</li>
