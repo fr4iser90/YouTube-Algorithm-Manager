@@ -149,7 +149,7 @@ export class TrainingManager {
     }
   }
 
-  async startPreTrainingAnalysis(sendResponse) {
+  async startAlgorithmSnapshotAnalytics(sendResponse) {
     try {
       const historyUrl = 'https://www.youtube.com/feed/history';
       const [historyTab] = await chrome.tabs.query({ url: historyUrl });

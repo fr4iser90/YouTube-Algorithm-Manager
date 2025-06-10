@@ -41,3 +41,37 @@ export interface ContentAnalysis {
   category: string;
   keywords: string[];
 }
+
+export interface AnalyticsResults {
+  historyVideoCount: number;
+  recommendedVideoCount: number;
+  topKeywords: { term: string; score: number }[];
+  topPhrases: { phrase: string; count: number }[];
+  topChannels: {
+    channel: string;
+    count: number;
+    historyRatio: number;
+    recommendationRatio: number;
+    categories: string[];
+    keywords: string[];
+  }[];
+  topVideos: { title: string; url: string }[];
+  categoryDistribution: Record<string, number>;
+  engagementPatterns: {
+    watchTimeDistribution: Record<string, number>;
+    contentTypes: Record<string, number>;
+    peakHours: Record<string, number>;
+  };
+  timestamp: number;
+}
+
+export interface AlgorithmAnalyticsProps {
+  currentState?: AlgorithmState;
+  historicalData: AlgorithmState[];
+}
+
+export interface AlgorithmSnapshotAnalyticsProps {
+  onAnalysisComplete?: (results: AnalyticsResults) => void;
+  onSaveProfile?: (profile: AlgorithmState) => void;
+  onCreatePreset?: (preset: TrainingPreset) => void;
+}

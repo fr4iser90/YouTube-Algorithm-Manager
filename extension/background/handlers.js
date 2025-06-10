@@ -59,7 +59,7 @@ export function setupMessageHandlers() {
         return true; // Indicates that the response is sent asynchronously
 
       case 'ANALYZE_PRE_TRAINING':
-        trainingManager.startPreTrainingAnalysis(sendResponse);
+        trainingManager.startAlgorithmSnapshotAnalytics(sendResponse);
         return true; // Indicates that the response is sent asynchronously
 
       case 'HISTORY_ANALYSIS_COMPLETE':

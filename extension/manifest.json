@@ -25,7 +25,7 @@
       "matches": [
         "https://www.youtube.com/feed/history"
       ],
-      "js": ["content/history-analyzer.js"],
+      "js": ["content/analyze/history-analyzer.js"],
       "run_at": "document_end"
     },
     {
@@ -36,17 +36,17 @@
       ],
       "exclude_matches": ["*://*.youtube.com/feed/history"],
       "js": [
-          "content/cookies.js",
-          "content/utils.js",
-          "content/helpers.js",
-          "content/watch-score.js",
-          "content/ad-detection.js",
-          "content/warmup.js",
-          "content/actions.js",
-          "content/stopwords.js",
-          "content/clickbait-phrases.js",
-          "content/pre-training-analyzer.js",
-          "content/youtube-trainer.js"
+          "content/utils/cookies.js",
+          "content/utils/utils.js",
+          "content/utils/helpers.js",
+          "content/training/watch-score.js",
+          "content/ads/ad-detection.js",
+          "content/training/warmup.js",
+          "content/training/actions.js",
+          "content/utils/stopwords.js",
+          "content/clickbait/clickbait-phrases.js",
+          "content/analyze/pre-training-analyzer.js",
+          "content/training/youtube-trainer.js"
       ],
       "run_at": "document_end"
     }

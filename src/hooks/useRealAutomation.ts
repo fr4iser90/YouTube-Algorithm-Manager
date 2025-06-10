@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { automationManager, AutomationProgress } from '../utils/automationManager';
-import { TrainingPreset, AlgorithmState } from '../types';
+import { automationManager, AutomationProgress } from '@/utils/automationManager';
+import { TrainingPreset, AlgorithmState } from '@/types';
 
 export const useRealAutomation = () => {
   const [isActive, setIsActive] = useState(false);
