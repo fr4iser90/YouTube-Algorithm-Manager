@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Upload, Download, Plus, X, PlaySquare } from 'lucide-react';
 import { PresetCard } from './PresetCard';
+import { PresetEditor } from './PresetEditor';
 
 interface TrainingManagerProps {
   onImport: () => void;
@@ -31,6 +32,8 @@ export const TrainingManager: React.FC<TrainingManagerProps> = ({
 }) => {
   const [presets, setPresets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingPreset, setEditingPreset] = useState<any | undefined>(undefined);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -76,6 +79,28 @@ export const TrainingManager: React.FC<TrainingManagerProps> = ({
     })();
   }, [isVisible]);
 
+  const handleCreatePreset = () => {
+    setEditingPreset(undefined);
+    setIsEditorOpen(true);
+  };
+
+  const handleEditPreset = (preset: any) => {
+    setEditingPreset(preset);
+    setIsEditorOpen(true);
+  };
+
+  const handleSavePreset = (preset: any) => {
+    if (editingPreset) {
+      // Update existing preset
+      setPresets(prev => prev.map(p => p.id === preset.id ? preset : p));
+    } else {
+      // Add new preset
+      setPresets(prev => [...prev, preset]);
+    }
+    setIsEditorOpen(false);
+    setEditingPreset(undefined);
+  };
+
   const safePresets = presets || [];
   return !isVisible ? null : (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -105,7 +130,7 @@ export const TrainingManager: React.FC<TrainingManagerProps> = ({
               <span>Export</span>
             </button>
             <button
-              onClick={onCreate}
+              onClick={handleCreatePreset}
               className="flex items-center space-x-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
             >
               <Plus className="h-4 w-4" />
@@ -144,7 +169,7 @@ export const TrainingManager: React.FC<TrainingManagerProps> = ({
                   key={preset.id}
                   preset={preset}
                   onTrain={onTrain}
-                  onEdit={onEdit}
+                  onEdit={handleEditPreset}
                   onDelete={onDelete}
                   onDuplicate={onDuplicate}
                 />
@@ -153,6 +178,15 @@ export const TrainingManager: React.FC<TrainingManagerProps> = ({
           </div>
         </div>
       </div>
+      <PresetEditor
+        preset={editingPreset}
+        isOpen={isEditorOpen}
+        onClose={() => {
+          setIsEditorOpen(false);
+          setEditingPreset(undefined);
+        }}
+        onSave={handleSavePreset}
+      />
     </div>
   );
 };
