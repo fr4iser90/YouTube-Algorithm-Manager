@@ -45,6 +45,7 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [channelInput, setChannelInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showAvoidSuggestions, setShowAvoidSuggestions] = useState(false);
 
   // Keyword suggestions based on category and language
   const keywordSuggestions = {
@@ -555,22 +556,41 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-white mb-4">Avoid Keywords</h3>
-                
-                <div className="mb-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-                  <p className="text-sm text-gray-300 mb-2">Common keywords to avoid:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {getSuggestedAvoidKeywords().map(keyword => (
-                      <button
-                        key={keyword}
-                        onClick={() => addKeyword(keyword, 'avoid')}
-                        className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                      >
-                        - {keyword}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-white">Avoid Keywords</h3>
+                  <button
+                    onClick={() => setShowAvoidSuggestions(!showAvoidSuggestions)}
+                    className="flex items-center space-x-1 px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                    <span>Suggestions</span>
+                    {showAvoidSuggestions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
                 </div>
+
+                <AnimatePresence>
+                  {showAvoidSuggestions && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="mb-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600"
+                    >
+                      <p className="text-sm text-gray-300 mb-2">Common keywords to avoid:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {getSuggestedAvoidKeywords().map(keyword => (
+                          <button
+                            key={keyword}
+                            onClick={() => addKeyword(keyword, 'avoid')}
+                            className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                          >
+                            - {keyword}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div className="flex space-x-2 mb-4">
                   <input

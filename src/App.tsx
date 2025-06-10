@@ -185,6 +185,19 @@ function App() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // Listen for open-preset-editor events
+  useEffect(() => {
+    const handleOpenPresetEditor = (event: CustomEvent) => {
+      setEditingPreset(event.detail.preset);
+      setIsEditorOpen(true);
+    };
+
+    window.addEventListener('open-preset-editor', handleOpenPresetEditor as EventListener);
+    return () => {
+      window.removeEventListener('open-preset-editor', handleOpenPresetEditor as EventListener);
+    };
+  }, []);
+
   const handleTrainPreset = async (preset: TrainingPreset) => {
     console.log('🎯 Starting training for preset:', preset.name);
     
