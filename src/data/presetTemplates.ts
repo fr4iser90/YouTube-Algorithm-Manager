@@ -30,9 +30,6 @@ export const presetTemplates: Omit<TrainingPreset, 'id' | 'createdAt'>[] = [
     avoidKeywords: ['drama', 'gossip', 'clickbait', 'reaction'],
     trainingDuration: 60,
     advancedOptions: {
-      clearHistoryFirst: true,
-      useIncognito: false,
-      simulateRealTiming: true,
       engagementRate: 0.7,
       skipAds: true
     }
@@ -64,9 +61,6 @@ export const presetTemplates: Omit<TrainingPreset, 'id' | 'createdAt'>[] = [
     avoidKeywords: ['Drama', 'Klatsch', 'Clickbait'],
     trainingDuration: 50,
     advancedOptions: {
-      clearHistoryFirst: true,
-      useIncognito: false,
-      simulateRealTiming: true,
       engagementRate: 0.6,
       skipAds: true
     }
@@ -100,9 +94,6 @@ export const presetTemplates: Omit<TrainingPreset, 'id' | 'createdAt'>[] = [
     avoidKeywords: ['pseudoscience', 'conspiracy', 'unproven', 'miracle cure'],
     trainingDuration: 45,
     advancedOptions: {
-      clearHistoryFirst: false,
-      useIncognito: false,
-      simulateRealTiming: true,
       engagementRate: 0.8,
       skipAds: false
     }
@@ -134,9 +125,6 @@ export const presetTemplates: Omit<TrainingPreset, 'id' | 'createdAt'>[] = [
     avoidKeywords: ['extremismo', 'odio', 'fake news'],
     trainingDuration: 50,
     advancedOptions: {
-      clearHistoryFirst: true,
-      useIncognito: true,
-      simulateRealTiming: true,
       engagementRate: 0.4,
       skipAds: true
     }
@@ -169,9 +157,6 @@ export const presetTemplates: Omit<TrainingPreset, 'id' | 'createdAt'>[] = [
     avoidKeywords: ['drama', 'beef', 'controversy', 'gossip'],
     trainingDuration: 40,
     advancedOptions: {
-      clearHistoryFirst: false,
-      useIncognito: false,
-      simulateRealTiming: true,
       engagementRate: 0.9,
       skipAds: false
     }
@@ -204,9 +189,6 @@ export const presetTemplates: Omit<TrainingPreset, 'id' | 'createdAt'>[] = [
     avoidKeywords: ['consumerism', 'shopping haul', 'materialism', 'excess'],
     trainingDuration: 35,
     advancedOptions: {
-      clearHistoryFirst: false,
-      useIncognito: false,
-      simulateRealTiming: true,
       engagementRate: 0.6,
       skipAds: true
     }
@@ -237,9 +219,6 @@ export const presetTemplates: Omit<TrainingPreset, 'id' | 'createdAt'>[] = [
     avoidKeywords: ['ドラマ', 'ゴシップ'],
     trainingDuration: 45,
     advancedOptions: {
-      clearHistoryFirst: true,
-      useIncognito: false,
-      simulateRealTiming: true,
       engagementRate: 0.7,
       skipAds: true
     }

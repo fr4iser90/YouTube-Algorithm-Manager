@@ -586,18 +586,6 @@ function setupTrainingSwitcher() {
                 <label style="display:block;font-weight:600;margin-bottom:8px;">Advanced Options</label>
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <label style="display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" id="advClearHistory" ${preset.advancedOptions?.clearHistoryFirst ? "checked" : ""} />
-                    Clear History First
-                  </label>
-                  <label style="display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" id="advIncognito" ${preset.advancedOptions?.useIncognito ? "checked" : ""} />
-                    Use Incognito Mode
-                  </label>
-                  <label style="display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" id="advSimulateTiming" ${preset.advancedOptions?.simulateRealTiming !== false ? "checked" : ""} />
-                    Simulate Real Timing
-                  </label>
-                  <label style="display:flex;align-items:center;gap:8px;">
                     <input type="checkbox" id="advSkipAds" ${preset.advancedOptions?.skipAds ? "checked" : ""} />
                     Skip Ads
                   </label>
@@ -804,9 +792,6 @@ function setupTrainingSwitcher() {
           searches,
           channelPreferences,
           advancedOptions: {
-            clearHistoryFirst: modal.querySelector('#advClearHistory').checked,
-            useIncognito: modal.querySelector('#advIncognito').checked,
-            simulateRealTiming: modal.querySelector('#advSimulateTiming').checked,
             skipAds: modal.querySelector('#advSkipAds').checked,
             engagementRate: parseFloat(modal.querySelector('#advEngagement').value)
           }

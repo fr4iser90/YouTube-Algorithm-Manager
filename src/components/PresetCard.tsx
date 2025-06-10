@@ -127,22 +127,16 @@ export const PresetCard: React.FC<PresetCardProps> = ({
       {preset.advancedOptions && (
         <div className="mb-4 p-3 bg-gray-700/50 rounded-lg">
           <div className="flex items-center space-x-4 text-xs text-gray-400">
-            {preset.advancedOptions.useIncognito && (
-              <div className="flex items-center space-x-1">
-                <Shield className="h-3 w-3" />
-                <span>Incognito</span>
-              </div>
-            )}
-            {preset.advancedOptions.clearHistoryFirst && (
-              <div className="flex items-center space-x-1">
-                <Trash2 className="h-3 w-3" />
-                <span>Clear History</span>
-              </div>
-            )}
             <div className="flex items-center space-x-1">
               <Target className="h-3 w-3" />
               <span>{Math.round(preset.advancedOptions.engagementRate * 100)}% engagement</span>
             </div>
+            {preset.advancedOptions.skipAds && (
+              <div className="flex items-center space-x-1">
+                <Shield className="h-3 w-3" />
+                <span>Skip Ads</span>
+              </div>
+            )}
           </div>
         </div>
       )}

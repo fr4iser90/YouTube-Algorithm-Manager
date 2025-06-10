@@ -26,9 +26,6 @@
   "avoidKeywords": ["consumerism", "shopping haul", "materialism", "excess"],
   "trainingDuration": 35,
   "advancedOptions": {
-    "clearHistoryFirst": false,
-    "useIncognito": false,
-    "simulateRealTiming": true,
     "engagementRate": 0.6,
     "skipAds": true
   }

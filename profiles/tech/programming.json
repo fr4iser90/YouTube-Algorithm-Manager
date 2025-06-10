@@ -14,9 +14,6 @@
   "avoidKeywords": ["drama", "gossip"],
   "trainingDuration": 10,
   "advancedOptions": {
-    "clearHistoryFirst": false,
-    "useIncognito": false,
-    "simulateRealTiming": true,
     "engagementRate": 0.3,
     "skipAds": true
   }

@@ -25,9 +25,6 @@
   "avoidKeywords": ["extremismo", "odio", "fake news"],
   "trainingDuration": 50,
   "advancedOptions": {
-    "clearHistoryFirst": true,
-    "useIncognito": true,
-    "simulateRealTiming": true,
     "engagementRate": 0.4,
     "skipAds": true
   }

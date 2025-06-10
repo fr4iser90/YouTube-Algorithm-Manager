@@ -26,9 +26,6 @@
   "avoidKeywords": ["drama", "beef", "controversy", "gossip"],
   "trainingDuration": 40,
   "advancedOptions": {
-    "clearHistoryFirst": false,
-    "useIncognito": false,
-    "simulateRealTiming": true,
     "engagementRate": 0.9,
     "skipAds": false
   }

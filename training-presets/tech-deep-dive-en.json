@@ -27,9 +27,6 @@
   "avoidKeywords": ["drama", "gossip", "clickbait", "reaction"],
   "trainingDuration": 60,
   "advancedOptions": {
-    "clearHistoryFirst": true,
-    "useIncognito": false,
-    "simulateRealTiming": true,
     "engagementRate": 0.7,
     "skipAds": true,
     "playbackSpeed": 1.5

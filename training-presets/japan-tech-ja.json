@@ -24,9 +24,6 @@
   "avoidKeywords": ["ドラマ", "ゴシップ"],
   "trainingDuration": 45,
   "advancedOptions": {
-    "clearHistoryFirst": true,
-    "useIncognito": false,
-    "simulateRealTiming": true,
     "engagementRate": 0.7,
     "skipAds": true
   }

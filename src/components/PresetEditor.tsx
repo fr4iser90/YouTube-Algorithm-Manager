@@ -34,9 +34,6 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
     avoidKeywords: [],
     trainingDuration: 45,
     advancedOptions: {
-      clearHistoryFirst: true,
-      useIncognito: false,
-      simulateRealTiming: true,
       engagementRate: 0.7,
       skipAds: true
     }
@@ -115,9 +112,6 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
         avoidKeywords: [],
         trainingDuration: 45,
         advancedOptions: {
-          clearHistoryFirst: true,
-          useIncognito: false,
-          simulateRealTiming: true,
           engagementRate: 0.7,
           skipAds: true
         }
@@ -143,9 +137,6 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
       avoidKeywords: formData.avoidKeywords || [],
       trainingDuration: formData.trainingDuration || 45,
       advancedOptions: formData.advancedOptions || {
-        clearHistoryFirst: true,
-        useIncognito: false,
-        simulateRealTiming: true,
         engagementRate: 0.7,
         skipAds: true
       },
@@ -794,79 +785,35 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
             <div className="space-y-6">
               <h3 className="text-lg font-medium text-white">Advanced Options</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">Clear History First</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.advancedOptions?.clearHistoryFirst || false}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        advancedOptions: {
-                          ...prev.advancedOptions!,
-                          clearHistoryFirst: e.target.checked
-                        }
-                      }))}
-                      className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">Use Incognito Mode</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.advancedOptions?.useIncognito || false}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        advancedOptions: {
-                          ...prev.advancedOptions!,
-                          useIncognito: e.target.checked
-                        }
-                      }))}
-                      className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">Simulate Real Timing</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.advancedOptions?.simulateRealTiming || false}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        advancedOptions: {
-                          ...prev.advancedOptions!,
-                          simulateRealTiming: e.target.checked
-                        }
-                      }))}
-                      className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">Skip Ads</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.advancedOptions?.skipAds || false}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        advancedOptions: {
-                          ...prev.advancedOptions!,
-                          skipAds: e.target.checked
-                        }
-                      }))}
-                      className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center space-x-2 text-gray-300">
+                    <Shield className="h-4 w-4" />
+                    <span>Skip Ads</span>
+                  </label>
+                  <input
+                    type="checkbox"
+                    id="advSkipAds"
+                    checked={formData.advancedOptions?.skipAds || false}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      advancedOptions: {
+                        ...prev.advancedOptions!,
+                        skipAds: e.target.checked
+                      }
+                    }))}
+                    className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Engagement Rate: {Math.round((formData.advancedOptions?.engagementRate || 0.7) * 100)}%
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center space-x-2 text-gray-300">
+                    <Target className="h-4 w-4" />
+                    <span>Engagement Rate</span>
                   </label>
                   <input
                     type="range"
+                    id="advEngagement"
                     min="0"
                     max="1"
                     step="0.1"
@@ -878,12 +825,11 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
                         engagementRate: parseFloat(e.target.value)
                       }
                     }))}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-32 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>Passive</span>
-                    <span>Active</span>
-                  </div>
+                  <span className="text-gray-300 w-12 text-right">
+                    {Math.round((formData.advancedOptions?.engagementRate || 0.7) * 100)}%
+                  </span>
                 </div>
               </div>
             </div>
@@ -915,9 +861,6 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({
                   avoidKeywords: [],
                   trainingDuration: 45,
                   advancedOptions: {
-                    clearHistoryFirst: true,
-                    useIncognito: false,
-                    simulateRealTiming: true,
                     engagementRate: 0.7,
                     skipAds: true
                   }

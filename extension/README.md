@@ -79,7 +79,6 @@ This browser extension automates interactions with YouTube for research and cont
   avoidKeywords: ["drama", "gossip"],
   advancedOptions: {
     engagementRate: 0.7,
-    clearHistoryFirst: false
   }
 }
 ```

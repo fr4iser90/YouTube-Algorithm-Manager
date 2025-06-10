@@ -17,9 +17,6 @@ export interface TrainingPreset {
   lastUsed?: Date;
   trainingDuration: number; // in minutes
   advancedOptions: {
-    clearHistoryFirst: boolean;
-    useIncognito: boolean;
-    simulateRealTiming: boolean;
     engagementRate: number; // 0-1
     skipAds: boolean;
   };

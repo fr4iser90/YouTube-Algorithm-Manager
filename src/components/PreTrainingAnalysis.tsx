@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Play, History, BrainCircuit, Save } from 'lucide-react';
+import { Play, History, BrainCircuit, Save, Plus } from 'lucide-react';
 
 const COLORS = ['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE', '#F5F3FF'];
 
@@ -97,9 +97,6 @@ export function PreTrainingAnalysis() {
         avoidKeywords: [],
         trainingDuration: 15,
         advancedOptions: {
-            clearHistoryFirst: true,
-            useIncognito: true,
-            simulateRealTiming: true,
             engagementRate: 0.4,
             skipAds: true
         }
@@ -112,14 +109,25 @@ export function PreTrainingAnalysis() {
       preset: newProfilePreset,
       algorithmState: {
         timestamp: new Date(),
-        recommendations: [],
-        categories: [],
+        recommendations: results.topVideos,
+        categories: Object.keys(results.categoryDistribution),
         sentiment: 'neutral',
         profileScore: 0,
         language: 'en',
         region: 'US',
         blockedChannels: [],
-        prioritizedChannels: []
+        prioritizedChannels: results.topChannels.slice(0, 5).map(c => c.channel),
+        categoryDistribution: results.categoryDistribution,
+        engagementPatterns: results.engagementPatterns,
+        topKeywords: results.topKeywords,
+        topPhrases: results.topPhrases,
+        topChannels: results.topChannels,
+        contentAnalysis: {
+          relevance: 0,
+          sentiment: 'neutral',
+          category: 'custom',
+          keywords: results.topKeywords.map(k => k.term)
+        }
       },
       createdAt: new Date(),
       lastUsed: new Date(),
@@ -128,7 +136,13 @@ export function PreTrainingAnalysis() {
       totalSearches: 0,
       trainingHours: 0,
       isActive: false,
-      tags: ['analyzed', ...results.topKeywords.slice(0, 4).map(kw => kw.term)]
+      tags: ['analyzed', ...results.topKeywords.slice(0, 4).map(kw => kw.term)],
+      preferredCategories: Object.keys(results.categoryDistribution),
+      preferredChannels: results.topChannels.slice(0, 5).map(c => c.channel),
+      preferredKeywords: results.topKeywords.map(k => k.term),
+      watchHistory: [],
+      avoidedChannels: [],
+      avoidedKeywords: []
     };
 
     try {
@@ -148,6 +162,36 @@ export function PreTrainingAnalysis() {
       console.error('Failed to save profile:', error);
       alert('Error saving profile. See console for details.');
     }
+  };
+
+  const createPreset = () => {
+    if (!results) return;
+    window.dispatchEvent(new CustomEvent('open-preset-editor', {
+      detail: {
+        preset: {
+          name: `Analysis Preset ${new Date().toLocaleDateString()}`,
+          description: `Generated from analysis on ${new Date(results.timestamp).toLocaleString()}`,
+          category: 'custom',
+          color: '#8B5CF6',
+          language: 'en',
+          region: 'US',
+          searches: results.topKeywords.slice(0, 5).map(kw => ({
+            query: kw.term,
+            frequency: 2,
+            duration: 60,
+            language: 'en',
+            region: 'US'
+          })),
+          targetKeywords: results.topKeywords.map(kw => kw.term),
+          avoidKeywords: [],
+          trainingDuration: 15,
+          advancedOptions: {
+            engagementRate: 0.4,
+            skipAds: true
+          }
+        }
+      }
+    }));
   };
 
   return (
@@ -269,13 +313,22 @@ export function PreTrainingAnalysis() {
                   Videos
                 </button>
               </div>
-              <button
-                onClick={saveAsProfile}
-                className="flex items-center space-x-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm transition-colors"
-              >
-                <Save className="h-4 w-4" />
-                <span>Save as Profile</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={createPreset}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Create Preset</span>
+                </button>
+                <button
+                  onClick={saveAsProfile}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm transition-colors"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Save as Profile</span>
+                </button>
+              </div>
             </div>
 
             <div style={{ width: '100%', height: 400 }}>

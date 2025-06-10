@@ -261,17 +261,6 @@ class YouTubeAlgorithmTrainer {
       // Handle cookie consent at the start
       await window.cookieManager.handleCookieConsent();
 
-      // Step 2: Clear history if requested
-      if (preset.advancedOptions?.clearHistoryFirst) {
-        this.sendProgress(15, 'Clearing browsing data...');
-        await new Promise(resolve => {
-          chrome.runtime.sendMessage({ type: 'CLEAR_HISTORY' }, () => {
-            resolve();
-          });
-        });
-        await this.delay(2000);
-      }
-      
       // NEW STEP: Search for preferred channels first
       this.sendProgress(20, 'Searching for preferred channels...');
       await this.searchPreferredChannels();

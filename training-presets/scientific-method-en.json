@@ -27,9 +27,6 @@
   "avoidKeywords": ["pseudoscience", "conspiracy", "unproven", "miracle cure"],
   "trainingDuration": 45,
   "advancedOptions": {
-    "clearHistoryFirst": false,
-    "useIncognito": false,
-    "simulateRealTiming": true,
     "engagementRate": 0.8,
     "skipAds": false
   }
