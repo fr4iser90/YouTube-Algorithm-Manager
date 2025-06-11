@@ -6,14 +6,6 @@
   "subcategory": "misinformation",
   "language": "en",
   "region": "all",
-  "channelPreferences": [
-    {
-      "channelId": "fact_check_channel_1",
-      "channelName": "Fact Check Channel 1",
-      "action": "prioritize",
-      "reason": "Reliable fact-checking content"
-    }
-  ],
   "channelBlocks": [
     {
       "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",

@@ -6,20 +6,6 @@
   "subcategory": "conspiracy",
   "language": "de",
   "region": "DE",
-  "channelPreferences": [
-    {
-      "channelId": "tagesschau",
-      "channelName": "Tagesschau",
-      "action": "prioritize",
-      "reason": "Seriöse Nachrichtenquelle"
-    },
-    {
-      "channelId": "zdf",
-      "channelName": "ZDF",
-      "action": "prioritize",
-      "reason": "Seriöse Nachrichtenquelle"
-    }
-  ],
   "channelBlocks": [
     {
       "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
