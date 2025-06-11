@@ -16,8 +16,7 @@
   
   "host_permissions": [
     "https://www.youtube.com/*",
-    "https://youtube.com/*",
-    "http://localhost:5173/*"
+    "https://youtube.com/*"
   ],
   
   "content_scripts": [
@@ -31,8 +30,7 @@
     {
       "matches": [
         "https://www.youtube.com/*", 
-        "https://youtube.com/*",
-        "http://localhost:5173/*"
+        "https://youtube.com/*"
       ],
       "exclude_matches": ["*://*.youtube.com/feed/history"],
       "js": [
@@ -43,7 +41,7 @@
           "content/ads/ad-detection.js",
           "content/training/warmup.js",
           "content/training/actions.js",
-          "content/utils/stopwords.js",
+          "content/lang/stopwords.js",
           "content/clickbait/clickbait-phrases.js",
           "content/analyze/pre-training-analyzer.js",
           "content/training/youtube-trainer.js"

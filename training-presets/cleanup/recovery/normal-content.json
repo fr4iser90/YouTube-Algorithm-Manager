@@ -1,0 +1,74 @@
+{
+  "id": "cleanup-recovery-normal",
+  "name": "Normal Content Recovery",
+  "description": "Hilft dabei, wieder normale und seriöse Inhalte zu sehen",
+  "category": "cleanup",
+  "subcategory": "recovery",
+  "language": "de",
+  "region": "DE",
+  "channelPreferences": [
+    {
+      "channelId": "tagesschau",
+      "channelName": "Tagesschau",
+      "action": "prioritize",
+      "reason": "Seriöse Nachrichtenquelle"
+    },
+    {
+      "channelId": "zdf",
+      "channelName": "ZDF",
+      "action": "prioritize",
+      "reason": "Seriöse Nachrichtenquelle"
+    },
+    {
+      "channelId": "ard",
+      "channelName": "ARD",
+      "action": "prioritize",
+      "reason": "Seriöse Nachrichtenquelle"
+    }
+  ],
+  "targetKeywords": [
+    "nachrichten",
+    "dokumentation",
+    "reportage",
+    "unterhaltung",
+    "kultur",
+    "sport",
+    "wissen",
+    "bildung"
+  ],
+  "searches": [
+    {
+      "query": "tagesschau",
+      "frequency": 3,
+      "duration": 90,
+      "language": "de",
+      "region": "DE"
+    },
+    {
+      "query": "zdf heute",
+      "frequency": 2,
+      "duration": 90,
+      "language": "de",
+      "region": "DE"
+    },
+    {
+      "query": "ard mediathek",
+      "frequency": 2,
+      "duration": 90,
+      "language": "de",
+      "region": "DE"
+    },
+    {
+      "query": "arte dokumentation",
+      "frequency": 2,
+      "duration": 90,
+      "language": "de",
+      "region": "DE"
+    }
+  ],
+  "trainingDuration": 30,
+  "advancedOptions": {
+    "engagementRate": 0.8,
+    "skipAds": true
+  }
+} 

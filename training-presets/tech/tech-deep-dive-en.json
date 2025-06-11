@@ -2,6 +2,7 @@
   "name": "Tech Deep Dive (English)",
   "description": "AI research, programming, and cutting-edge technology in English",
   "category": "tech",
+  "subcategory": "ai",
   "color": "#3B82F6",
   "language": "en",
   "region": "US",

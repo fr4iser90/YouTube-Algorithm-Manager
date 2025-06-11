@@ -12,11 +12,14 @@ export const AlgorithmAnalytics: React.FC<AlgorithmAnalyticsProps> = ({
   const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#6B7280'];
 
   useEffect(() => {
-    if (currentState) {
-      const analyzer = new AlgorithmAnalyzer(currentState);
-      const results = analyzer.analyzeContent();
-      setAnalyticsResults(results);
+    if (!currentState) {
+      setAnalyticsResults(null);
+      return;
     }
+    
+    const analyzer = new AlgorithmAnalyzer(currentState);
+    const results = analyzer.analyzeContent();
+    setAnalyticsResults(results);
   }, [currentState]);
 
   if (!currentState || !analyticsResults) {

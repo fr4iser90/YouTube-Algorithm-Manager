@@ -1,0 +1,71 @@
+{
+  "id": "cleanup-clickbait-block",
+  "name": "Clickbait Content Blocker",
+  "description": "Blocks clickbait and sensational content, promotes quality journalism",
+  "category": "cleanup",
+  "subcategory": "clickbait",
+  "language": "en",
+  "region": "all",
+  "channelPreferences": [
+    {
+      "channelId": "clickbait_channel_1",
+      "channelName": "Clickbait Channel 1",
+      "action": "block",
+      "reason": "Uses sensational headlines and misleading thumbnails"
+    }
+  ],
+  "channelBlocks": [
+    {
+      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
+      "channelName": "Clickbait News",
+      "reason": "Known for sensational headlines and misleading content",
+      "blockType": "permanent",
+      "blockLevel": "strict"
+    },
+    {
+      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
+      "channelName": "Viral Content",
+      "reason": "Focuses on viral content with misleading titles",
+      "blockType": "permanent",
+      "blockLevel": "strict"
+    }
+  ],
+  "targetKeywords": [
+    "in-depth analysis",
+    "detailed report",
+    "comprehensive review",
+    "thorough investigation"
+  ],
+  "avoidKeywords": [
+    "you won't believe",
+    "shocking truth",
+    "mind blowing",
+    "never seen before",
+    "going viral",
+    "breaking news",
+    "exposed",
+    "the truth about",
+    "they don't want you to know"
+  ],
+  "searches": [
+    {
+      "query": "quality journalism",
+      "frequency": 3,
+      "duration": 90,
+      "language": "en",
+      "region": "all"
+    },
+    {
+      "query": "in depth analysis",
+      "frequency": 2,
+      "duration": 120,
+      "language": "en",
+      "region": "all"
+    }
+  ],
+  "trainingDuration": 30,
+  "advancedOptions": {
+    "engagementRate": 0.8,
+    "skipAds": true
+  }
+} 

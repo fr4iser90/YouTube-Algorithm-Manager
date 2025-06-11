@@ -2,6 +2,7 @@
   "name": "Tech Deutsch",
   "description": "Deutsche Tech-Inhalte, Programmierung und Technologie",
   "category": "tech",
+  "subcategory": "ki",
   "color": "#3B82F6",
   "language": "de",
   "region": "DE",

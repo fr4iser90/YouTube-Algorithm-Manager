@@ -1,0 +1,73 @@
+{
+  "id": "cleanup-misinformation-block",
+  "name": "Misinformation Blocker",
+  "description": "Blocks misinformation and promotes fact-checking content",
+  "category": "cleanup",
+  "subcategory": "misinformation",
+  "language": "en",
+  "region": "all",
+  "channelPreferences": [
+    {
+      "channelId": "fact_check_channel_1",
+      "channelName": "Fact Check Channel 1",
+      "action": "prioritize",
+      "reason": "Reliable fact-checking content"
+    }
+  ],
+  "channelBlocks": [
+    {
+      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
+      "channelName": "Fake News Network",
+      "reason": "Known for spreading misinformation and fake news",
+      "blockType": "permanent",
+      "blockLevel": "strict"
+    },
+    {
+      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
+      "channelName": "Unverified Sources",
+      "reason": "Publishes unverified and misleading information",
+      "blockType": "permanent",
+      "blockLevel": "strict"
+    }
+  ],
+  "targetKeywords": [
+    "fact check",
+    "debunked",
+    "scientific consensus",
+    "verified sources"
+  ],
+  "avoidKeywords": [
+    "fake news",
+    "alternative facts",
+    "unverified claims",
+    "misleading information"
+  ],
+  "searches": [
+    {
+      "query": "fact checking methods",
+      "frequency": 3,
+      "duration": 90,
+      "language": "en",
+      "region": "all"
+    },
+    {
+      "query": "how to spot misinformation",
+      "frequency": 2,
+      "duration": 120,
+      "language": "en",
+      "region": "all"
+    },
+    {
+      "query": "media literacy",
+      "frequency": 2,
+      "duration": 90,
+      "language": "en",
+      "region": "all"
+    }
+  ],
+  "trainingDuration": 30,
+  "advancedOptions": {
+    "engagementRate": 0.8,
+    "skipAds": true
+  }
+} 

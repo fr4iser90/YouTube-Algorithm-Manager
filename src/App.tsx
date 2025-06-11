@@ -19,6 +19,7 @@ import { usePresetFilters } from '@/hooks/usePresetFilters';
 import { usePresetManagement } from '@/hooks/usePresetManagement';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
 import { AnalyticsProvider } from '@/utils/analyticsProvider';
+import { PresetGrid } from '@/components/layout/PresetGrid';
 
 function App() {
   // Local Storage Hooks
@@ -390,101 +391,22 @@ function App() {
         </div>
 
         {/* Presets Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">YouTube Presets</h2>
-            <div className="flex items-center space-x-3">
-              <button 
-                onClick={handleCreatePreset}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Create Preset</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search presets, keywords..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Categories</option>
-                <option value="tech">Tech</option>
-                <option value="science">Science</option>
-                <option value="politics">Politics</option>
-                <option value="music">Music</option>
-                <option value="lifestyle">Lifestyle</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <select
-                value={languageFilter}
-                onChange={(e) => setLanguageFilter(e.target.value)}
-                className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Languages</option>
-                {availableLanguages.map(lang => (
-                  <option key={lang} value={lang}>{lang.toUpperCase()}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Preset Grid */}
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ staggerChildren: 0.1 }}
-          >
-            {filteredPresets.map((preset) => (
-              <PresetCard
-                key={preset.id}
-                preset={preset}
-                onTrain={handleTrainPreset}
-                onEdit={handleEditPreset}
-                onDelete={handleDeletePreset}
-                onDuplicate={handleDuplicatePreset}
-                isTraining={extensionTrainingActive}
-              />
-            ))}
-          </motion.div>
-
-          {filteredPresets.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-500 mb-4">
-                {searchQuery || categoryFilter !== 'all' || languageFilter !== 'all' 
-                  ? 'No presets found' 
-                  : 'No presets available'
-                }
-              </div>
-              <button 
-                onClick={handleCreatePreset}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                Create First Preset
-              </button>
-            </div>
-          )}
-        </div>
+        <PresetGrid
+          filteredPresets={filteredPresets}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          languageFilter={languageFilter}
+          setLanguageFilter={setLanguageFilter}
+          availableLanguages={availableLanguages}
+          handleCreatePreset={handleCreatePreset}
+          handleTrainPreset={handleTrainPreset}
+          handleEditPreset={handleEditPreset}
+          handleDeletePreset={handleDeletePreset}
+          handleDuplicatePreset={handleDuplicatePreset}
+          isTraining={extensionTrainingActive}
+        />
       </div>
 
       <PresetEditor

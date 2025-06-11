@@ -2,6 +2,7 @@
   "name": "Creative Arts",
   "description": "Music production, visual arts, and creative processes",
   "category": "music",
+  "subcategory": "production",
   "color": "#8B5CF6",
   "language": "en",
   "region": "US",

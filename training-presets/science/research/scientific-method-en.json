@@ -2,6 +2,7 @@
   "name": "Scientific Method",
   "description": "Research, experiments, and scientific discussions",
   "category": "science",
+  "subcategory": "research",
   "color": "#10B981",
   "language": "en",
   "region": "US",

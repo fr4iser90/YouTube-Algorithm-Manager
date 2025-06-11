@@ -1,0 +1,85 @@
+{
+  "id": "cleanup-conspiracy-block",
+  "name": "Content Cleanup",
+  "description": "Blocks conspiracy theories and misinformation, helps return to normal content",
+  "category": "cleanup",
+  "subcategory": "conspiracy",
+  "language": "de",
+  "region": "DE",
+  "channelPreferences": [
+    {
+      "channelId": "tagesschau",
+      "channelName": "Tagesschau",
+      "action": "prioritize",
+      "reason": "Seriöse Nachrichtenquelle"
+    },
+    {
+      "channelId": "zdf",
+      "channelName": "ZDF",
+      "action": "prioritize",
+      "reason": "Seriöse Nachrichtenquelle"
+    }
+  ],
+  "channelBlocks": [
+    {
+      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
+      "channelName": "Verschwörungskanal",
+      "reason": "Verbreitet Verschwörungstheorien",
+      "blockType": "permanent",
+      "blockLevel": "strict"
+    },
+    {
+      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
+      "channelName": "Alternative News",
+      "reason": "Verbreitet Fehlinformationen",
+      "blockType": "permanent",
+      "blockLevel": "strict"
+    }
+  ],
+  "targetKeywords": [
+    "seriöse nachrichten",
+    "faktencheck",
+    "wissenschaftlich belegt",
+    "nachrichten",
+    "dokumentation",
+    "reportage"
+  ],
+  "avoidKeywords": [
+    "verschwörung",
+    "die wollen nicht dass du",
+    "verheimlicht",
+    "geheime agenda",
+    "mainstream lügen",
+    "die wahrheit über",
+    "aufgedeckt",
+    "sie verheimlichen"
+  ],
+  "searches": [
+    {
+      "query": "tagesschau",
+      "frequency": 3,
+      "duration": 90,
+      "language": "de",
+      "region": "DE"
+    },
+    {
+      "query": "zdf heute",
+      "frequency": 2,
+      "duration": 90,
+      "language": "de",
+      "region": "DE"
+    },
+    {
+      "query": "ard mediathek",
+      "frequency": 2,
+      "duration": 90,
+      "language": "de",
+      "region": "DE"
+    }
+  ],
+  "trainingDuration": 30,
+  "advancedOptions": {
+    "engagementRate": 0.8,
+    "skipAds": true
+  }
+} 
