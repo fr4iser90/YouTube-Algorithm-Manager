@@ -1,67 +1,86 @@
-import React, { useState, useMemo } from 'react';
-import { TrainingPreset } from '@/types/preset';
-import { X, Plus, ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { TrainingPreset } from '../../types/preset';
+import { X, Plus, Filter, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PresetEditor } from './PresetEditor';
+import { PresetCard } from './PresetCard';
 
 interface MergePresetsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  presets?: TrainingPreset[];
   onSave: (preset: TrainingPreset) => void;
 }
-
-const getCategories = (presets: TrainingPreset[] = []) => {
-  const cats = Array.from(new Set((presets || []).map(p => p.category)));
-  return cats;
-};
-const getSubcategories = (presets: TrainingPreset[] = [], category: string) => {
-  return Array.from(new Set((presets || []).filter(p => p.category === category).map(p => p.subcategory || 'General')));
-};
 
 export const MergePresetsModal: React.FC<MergePresetsModalProps> = ({
   isOpen,
   onClose,
-  presets = [],
   onSave
 }) => {
+  const [presets, setPresets] = useState<TrainingPreset[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [showEditor, setShowEditor] = useState(false);
-  const [mergedPreset, setMergedPreset] = useState<TrainingPreset | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string>('');
-  const [expandedSubcats, setExpandedSubcats] = useState<string[]>([]);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [languageFilter, setLanguageFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
 
-  const categories = useMemo(() => getCategories(presets || []), [presets]);
-  const languages = useMemo(() => Array.from(new Set((presets || []).map(p => p.language))), [presets]);
-  const regions = useMemo(() => Array.from(new Set((presets || []).map(p => p.region))), [presets]);
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    // 1. Lade lokale Presets (optional)
+    const loadLocal = async () => {
+      let localPresets: any[] = [];
+      try {
+        localPresets = JSON.parse(localStorage.getItem('youtube-presets') || '[]');
+      } catch {
+        localPresets = [];
+      }
+      return localPresets.map(p => ({ ...p, source: 'local' }));
+    };
+    // 2. Lade GitHub-Presets
+    const loadGitHub = async () => {
+      try {
+        const manifestUrl = 'https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/training-presets/manifest.json';
+        const manifestRes = await fetch(manifestUrl, { cache: 'no-store' });
+        if (!manifestRes.ok) return [];
+        const manifest = await manifestRes.json();
+        const presetPromises = manifest.map(async (meta: any) => {
+          const res = await fetch('https://raw.githubusercontent.com/fr4iser90/YouTube-Algorithm-Manager/main/' + meta.path, { cache: 'no-store' });
+          if (!res.ok) return null;
+          const preset = await res.json();
+          return { ...meta, ...preset, source: 'github' };
+        });
+        return (await Promise.all(presetPromises)).filter(Boolean);
+      } catch {
+        return [];
+      }
+    };
+    (async () => {
+      const [local, github] = await Promise.all([loadLocal(), loadGitHub()]);
+      setPresets([...github, ...local]);
+      setLoading(false);
+    })();
+  }, [isOpen]);
 
-  React.useEffect(() => {
-    if (!activeCategory && categories.length > 0) setActiveCategory(categories[0]);
-  }, [categories, activeCategory]);
+  const categories = useMemo(() => Array.from(new Set(presets.map(p => p.category))), [presets]);
+  const languages = useMemo(() => Array.from(new Set(presets.map(p => p.language))), [presets]);
+  const regions = useMemo(() => Array.from(new Set(presets.map(p => p.region))), [presets]);
+
+  const filteredPresets = useMemo(() => {
+    return presets.filter(p => {
+      const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+      const matchesLanguage = languageFilter === 'all' || p.language === languageFilter;
+      const matchesRegion = regionFilter === 'all' || p.region === regionFilter;
+      const matchesSearch = search === '' || p.name.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase());
+      return matchesCategory && matchesLanguage && matchesRegion && matchesSearch;
+    });
+  }, [presets, categoryFilter, languageFilter, regionFilter, search]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
-  const toggleSubcat = (subcat: string) => {
-    setExpandedSubcats(prev => prev.includes(subcat) ? prev.filter(x => x !== subcat) : [...prev, subcat]);
-  };
-
-  const filteredPresets = useMemo(() => {
-    return (presets || []).filter(p =>
-      (!activeCategory || p.category === activeCategory) &&
-      (languageFilter === 'all' || p.language === languageFilter) &&
-      (regionFilter === 'all' || p.region === regionFilter) &&
-      (search === '' || p.name.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [presets, activeCategory, languageFilter, regionFilter, search]);
-
-  const subcategories = useMemo(() => getSubcategories(filteredPresets, activeCategory), [filteredPresets, activeCategory]);
 
   const handleMerge = () => {
-    const selected = (presets || []).filter(p => selectedIds.includes(p.id));
+    const selected = presets.filter(p => selectedIds.includes(p.id));
     if (selected.length < 2) return;
     const merged: TrainingPreset = {
       ...selected[0],
@@ -82,8 +101,9 @@ export const MergePresetsModal: React.FC<MergePresetsModalProps> = ({
       createdAt: new Date(),
       lastUsed: undefined
     };
-    setMergedPreset(merged);
-    setShowEditor(true);
+    onSave(merged);
+    setSelectedIds([]);
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -111,80 +131,74 @@ export const MergePresetsModal: React.FC<MergePresetsModalProps> = ({
             </button>
           </div>
           <div className="p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <input
-                type="text"
-                placeholder="Search presets..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
-              />
-              <Filter className="h-5 w-5 text-gray-400" />
-              <select
-                value={languageFilter}
-                onChange={e => setLanguageFilter(e.target.value)}
-                className="px-2 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-              >
-                <option value="all">All Languages</option>
-                {(languages || []).map(lang => (
-                  <option key={lang} value={lang}>{lang?.toUpperCase?.() || ''}</option>
-                ))}
-              </select>
-              <select
-                value={regionFilter}
-                onChange={e => setRegionFilter(e.target.value)}
-                className="px-2 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-              >
-                <option value="all">All Regions</option>
-                {(regions || []).map(region => (
-                  <option key={region} value={region}>{region?.toUpperCase?.() || ''}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex space-x-2 mb-4">
-              {(categories || []).map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${activeCategory === cat ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search presets, keywords..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Filter className="h-4 w-4 text-gray-400" />
+                <select
+                  value={categoryFilter}
+                  onChange={e => setCategoryFilter(e.target.value)}
+                  className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {cat?.charAt?.(0).toUpperCase?.() + cat?.slice?.(1) || ''}
-                </button>
-              ))}
+                  <option value="all">All Categories</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <select
+                  value={languageFilter}
+                  onChange={e => setLanguageFilter(e.target.value)}
+                  className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Languages</option>
+                  {languages.map(lang => (
+                    <option key={lang} value={lang}>{lang.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <select
+                  value={regionFilter}
+                  onChange={e => setRegionFilter(e.target.value)}
+                  className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Regions</option>
+                  {regions.map(region => (
+                    <option key={region} value={region}>{region.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="space-y-2 max-h-80 overflow-y-auto">
-              {(subcategories || []).map(subcat => (
-                <div key={subcat} className="bg-gray-700 rounded-md mb-2">
-                  <button
-                    className="w-full flex items-center justify-between px-4 py-2 text-left text-white font-semibold focus:outline-none"
-                    onClick={() => toggleSubcat(subcat)}
-                  >
-                    <span>{subcat?.charAt?.(0).toUpperCase?.() + subcat?.slice?.(1) || ''}</span>
-                    {expandedSubcats.includes(subcat) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </button>
-                  <AnimatePresence>
-                    {expandedSubcats.includes(subcat) && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="px-4 pb-2"
-                      >
-                        {(filteredPresets || []).filter(p => (p.subcategory || 'General') === subcat).map(preset => (
-                          <label key={preset.id} className="flex items-center space-x-3 cursor-pointer py-1">
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.includes(preset.id)}
-                              onChange={() => toggleSelect(preset.id)}
-                              className="form-checkbox h-5 w-5 text-blue-600"
-                            />
-                            <span className="text-white font-medium">{preset.name}</span>
-                            <span className="text-gray-400 text-xs">({preset.language}/{preset.region})</span>
-                          </label>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+            <div className="space-y-4 max-h-80 overflow-y-auto">
+              {loading ? (
+                <div className="text-center text-gray-400 py-8">Loading presets...</div>
+              ) : filteredPresets.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">No presets found.</div>
+              ) : filteredPresets.map(preset => (
+                <div key={preset.id} className="flex items-center space-x-3 bg-gray-700 rounded-md p-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(preset.id)}
+                    onChange={() => toggleSelect(preset.id)}
+                    className="form-checkbox h-6 w-6 text-blue-600"
+                  />
+                  <span className="text-2xl mr-2">{preset.language === 'de' ? '🇩🇪' : preset.language === 'en' ? '🇺🇸' : '🌐'}</span>
+                  <div className="flex-1">
+                    <div className="font-semibold text-white">{preset.name}</div>
+                    <div className="text-xs text-gray-400 mb-1">{preset.category?.charAt(0).toUpperCase() + preset.category?.slice(1) || ''}</div>
+                    <div className="text-xs text-gray-300 truncate">{preset.description}</div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -197,14 +211,6 @@ export const MergePresetsModal: React.FC<MergePresetsModalProps> = ({
             </button>
           </div>
         </motion.div>
-        {showEditor && mergedPreset && (
-          <PresetEditor
-            preset={mergedPreset}
-            isOpen={showEditor}
-            onClose={() => setShowEditor(false)}
-            onSave={onSave}
-          />
-        )}
       </motion.div>
     </AnimatePresence>
   );

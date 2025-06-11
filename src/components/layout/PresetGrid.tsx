@@ -213,7 +213,7 @@ export const PresetGrid: React.FC<PresetGridProps> = ({
       <MergePresetsModal
         isOpen={isMergeModalOpen}
         onClose={() => setIsMergeModalOpen(false)}
-        presets={presets || []}
+        presets={presets}
         onSave={(mergedPreset) => {
           setIsMergeModalOpen(false);
           handleCreatePreset(); // Optionally open editor for further editing

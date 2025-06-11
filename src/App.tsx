@@ -405,8 +405,8 @@ function App() {
           handleEditPreset={handleEditPreset}
           handleDeletePreset={handleDeletePreset}
           handleDuplicatePreset={handleDuplicatePreset}
-          isTraining={extensionTrainingActive}
-        />
+                isTraining={extensionTrainingActive}
+              />
       </div>
 
       <PresetEditor
