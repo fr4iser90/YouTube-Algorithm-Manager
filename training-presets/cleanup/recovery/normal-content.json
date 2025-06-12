@@ -6,26 +6,6 @@
   "subcategory": "recovery",
   "language": "de",
   "region": "DE",
-  "channelPreferences": [
-    {
-      "channelId": "tagesschau",
-      "channelName": "Tagesschau",
-      "action": "prioritize",
-      "reason": "Seriöse Nachrichtenquelle"
-    },
-    {
-      "channelId": "zdf",
-      "channelName": "ZDF",
-      "action": "prioritize",
-      "reason": "Seriöse Nachrichtenquelle"
-    },
-    {
-      "channelId": "ard",
-      "channelName": "ARD",
-      "action": "prioritize",
-      "reason": "Seriöse Nachrichtenquelle"
-    }
-  ],
   "targetKeywords": [
     "nachrichten",
     "dokumentation",

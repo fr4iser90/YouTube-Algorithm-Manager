@@ -1,0 +1,54 @@
+{
+    "id": "cleanup-clickbait-block-de",
+    "name": "Clickbait Blocker (DE)",
+    "description": "Blockiert typische Clickbait-Phrasen.",
+    "category": "cleanup",
+    "subcategory": "clickbait",
+    "language": "de",
+    "region": "all",
+    "targetKeywords": [
+      "in-depth analysis",
+      "detailed report",
+      "comprehensive review",
+      "thorough investigation"
+    ],
+    "avoidKeywords": [
+      "du glaubst nicht",
+      "unglaublich",
+      "schockierend",
+      "das hat die welt noch nicht gesehen",
+      "so hast du das noch nie erlebt",
+      "krass",
+      "skandal",
+      "enthüllt",
+      "die wahrheit über",
+      "jetzt wird es ernst",
+      "was dann passiert ist unglaublich",
+      "klick hier",
+      "verpasst nicht",
+      "breaking news",
+      "exklusiv",
+      "nur heute"
+    ],
+    "searches": [
+      {
+        "query": "quality journalism",
+        "frequency": 3,
+        "duration": 90,
+        "language": "en",
+        "region": "all"
+      },
+      {
+        "query": "in depth analysis",
+        "frequency": 2,
+        "duration": 120,
+        "language": "en",
+        "region": "all"
+      }
+    ],
+    "trainingDuration": 30,
+    "advancedOptions": {
+      "engagementRate": 0.8,
+      "skipAds": true
+    }
+  } 

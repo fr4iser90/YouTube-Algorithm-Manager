@@ -6,22 +6,6 @@
   "subcategory": "clickbait",
   "language": "en",
   "region": "all",
-  "channelBlocks": [
-    {
-      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
-      "channelName": "Clickbait News",
-      "reason": "Known for sensational headlines and misleading content",
-      "blockType": "permanent",
-      "blockLevel": "strict"
-    },
-    {
-      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
-      "channelName": "Viral Content",
-      "reason": "Focuses on viral content with misleading titles",
-      "blockType": "permanent",
-      "blockLevel": "strict"
-    }
-  ],
   "targetKeywords": [
     "in-depth analysis",
     "detailed report",

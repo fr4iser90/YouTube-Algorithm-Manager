@@ -6,22 +6,6 @@
   "subcategory": "misinformation",
   "language": "en",
   "region": "all",
-  "channelBlocks": [
-    {
-      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
-      "channelName": "Fake News Network",
-      "reason": "Known for spreading misinformation and fake news",
-      "blockType": "permanent",
-      "blockLevel": "strict"
-    },
-    {
-      "channelId": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
-      "channelName": "Unverified Sources",
-      "reason": "Publishes unverified and misleading information",
-      "blockType": "permanent",
-      "blockLevel": "strict"
-    }
-  ],
   "targetKeywords": [
     "fact check",
     "debunked",
