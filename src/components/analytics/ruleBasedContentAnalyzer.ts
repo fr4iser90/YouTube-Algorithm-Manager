@@ -1,4 +1,6 @@
 // Rule-Based Content Analyzer - Browser Compatible Version
+import { ScoreSystem } from './scoring/ScoreSystem';
+
 export interface ContentAnalysis {
   category: string;
   confidence: number;
@@ -11,6 +13,7 @@ export interface ContentAnalysis {
   clickbaitScore: number;
   qualityScore: number;
   engagementPrediction: number;
+  overallScore: number;
 }
 
 export interface TrainingData {
@@ -27,17 +30,11 @@ export class RuleBasedContentAnalyzer {
     'tech', 'science', 'politics', 'music', 'lifestyle', 'gaming', 
     'education', 'entertainment', 'news', 'sports', 'cooking', 'travel'
   ];
+  private scoreSystem: ScoreSystem;
 
-  // Simple sentiment word lists for browser-based analysis
-  private positiveWords = [
-    'amazing', 'awesome', 'brilliant', 'excellent', 'fantastic', 'great', 'incredible',
-    'outstanding', 'perfect', 'wonderful', 'best', 'love', 'beautiful', 'good'
-  ];
-
-  private negativeWords = [
-    'awful', 'terrible', 'horrible', 'bad', 'worst', 'hate', 'disgusting',
-    'disappointing', 'failed', 'broken', 'useless', 'annoying', 'boring'
-  ];
+  constructor() {
+    this.scoreSystem = new ScoreSystem();
+  }
 
   async initialize(): Promise<void> {
     try {
@@ -67,17 +64,17 @@ export class RuleBasedContentAnalyzer {
       // Category prediction using keyword matching
       const categoryPrediction = this.predictCategory(processedText);
       
-      // Sentiment analysis using word lists
-      const sentimentResult = this.analyzeSentiment(fullText);
-      
-      // Clickbait detection
-      const clickbaitAnalysis = this.detectClickbait(title);
-      
-      // Quality assessment
-      const qualityScore = this.assessQuality(title, description);
-      
       // Keyword extraction
       const keywords = this.extractKeywords(fullText);
+      
+      // Sentiment analysis using keywords
+      const sentimentResult = this.scoreSystem.calculateSentimentScore(keywords);
+      
+      // Clickbait detection
+      const clickbaitAnalysis = this.scoreSystem.calculateClickbaitScore(title);
+      
+      // Quality assessment
+      const qualityScore = this.scoreSystem.calculateQualityScore(title, description);
       
       // Topic modeling
       const topics = this.extractTopics(fullText);
@@ -86,7 +83,19 @@ export class RuleBasedContentAnalyzer {
       const language = this.detectLanguage(fullText);
       
       // Engagement prediction
-      const engagementPrediction = this.predictEngagement(sentimentResult.score, qualityScore);
+      const engagementPrediction = this.scoreSystem.calculateEngagementScore(
+        sentimentResult.score,
+        qualityScore
+      );
+
+      // Calculate overall score
+      const overallScore = this.scoreSystem.calculateOverallScore({
+        quality: qualityScore,
+        clickbait: clickbaitAnalysis.score,
+        engagement: engagementPrediction,
+        sentiment: sentimentResult.score,
+        category: categoryPrediction.confidence
+      });
 
       return {
         category: categoryPrediction.category,
@@ -99,13 +108,12 @@ export class RuleBasedContentAnalyzer {
         isClickbait: clickbaitAnalysis.isClickbait,
         clickbaitScore: clickbaitAnalysis.score,
         qualityScore,
-        engagementPrediction
+        engagementPrediction,
+        overallScore
       };
 
     } catch (error) {
       console.error('❌ Content analysis failed:', error);
-      
-      // Fallback analysis
       return this.getFallbackAnalysis(title, description);
     }
   }
@@ -156,90 +164,6 @@ export class RuleBasedContentAnalyzer {
       category: bestCategory,
       confidence: Math.min(bestScore * 2, 1) // Scale confidence
     };
-  }
-
-  private analyzeSentiment(text: string): { sentiment: 'positive' | 'negative' | 'neutral'; score: number } {
-    const words = text.toLowerCase().split(/\s+/);
-    let score = 0;
-
-    words.forEach(word => {
-      if (this.positiveWords.includes(word)) {
-        score += 1;
-      } else if (this.negativeWords.includes(word)) {
-        score -= 1;
-      }
-    });
-
-    // Normalize score
-    const normalizedScore = score / Math.max(words.length / 10, 1);
-    
-    let sentiment: 'positive' | 'negative' | 'neutral';
-    if (normalizedScore > 0.1) sentiment = 'positive';
-    else if (normalizedScore < -0.1) sentiment = 'negative';
-    else sentiment = 'neutral';
-    
-    return {
-      sentiment,
-      score: normalizedScore
-    };
-  }
-
-  private detectClickbait(title: string): { isClickbait: boolean; score: number } {
-    const clickbaitIndicators = [
-      /you won't believe/i,
-      /shocking/i,
-      /amazing/i,
-      /incredible/i,
-      /must see/i,
-      /gone wrong/i,
-      /gone sexual/i,
-      /\d+ things/i,
-      /this will/i,
-      /watch until the end/i,
-      /!!!+/,
-      /\?{2,}/,
-      /clickbait/i
-    ];
-
-    let score = 0;
-    clickbaitIndicators.forEach(pattern => {
-      if (pattern.test(title)) {
-        score += 0.2;
-      }
-    });
-
-    // Check for excessive punctuation
-    const punctuationRatio = (title.match(/[!?]/g) || []).length / title.length;
-    score += punctuationRatio * 2;
-
-    // Check for caps ratio
-    const capsRatio = (title.match(/[A-Z]/g) || []).length / title.length;
-    if (capsRatio > 0.3) score += 0.3;
-
-    score = Math.min(score, 1);
-    
-    return {
-      isClickbait: score > 0.5,
-      score
-    };
-  }
-
-  private assessQuality(title: string, description?: string): number {
-    let score = 0.5; // Base score
-    
-    // Title quality
-    if (title.length > 10 && title.length < 100) score += 0.1;
-    if (!/[!?]{2,}/.test(title)) score += 0.1;
-    if (!/^[A-Z\s!?]+$/.test(title)) score += 0.1; // Not all caps
-    
-    // Description quality
-    if (description) {
-      if (description.length > 50) score += 0.1;
-      if (description.length > 200) score += 0.1;
-      if (!/spam|subscribe|like|comment/i.test(description)) score += 0.1;
-    }
-    
-    return Math.min(score, 1);
   }
 
   private extractKeywords(text: string): string[] {
@@ -309,15 +233,6 @@ export class RuleBasedContentAnalyzer {
     return 'en';
   }
 
-  private predictEngagement(sentiment: number, quality: number): number {
-    // Simple engagement prediction based on features
-    const baseEngagement = 0.5;
-    const sentimentBoost = sentiment > 0 ? 0.2 : sentiment < 0 ? -0.1 : 0;
-    const qualityBoost = (quality - 0.5) * 0.3;
-    
-    return Math.max(0, Math.min(1, baseEngagement + sentimentBoost + qualityBoost));
-  }
-
   private getFallbackAnalysis(title: string, description?: string): ContentAnalysis {
     return {
       category: 'unknown',
@@ -330,7 +245,8 @@ export class RuleBasedContentAnalyzer {
       isClickbait: false,
       clickbaitScore: 0,
       qualityScore: 0.5,
-      engagementPrediction: 0.5
+      engagementPrediction: 0.5,
+      overallScore: 0.5
     };
   }
 

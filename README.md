@@ -11,7 +11,7 @@ This browser extension helps users filter and manage their YouTube content by de
 ---
 
 ## 📋 Overview
-This project is a browser extension that helps users filter YouTube content based on custom keyword lists and clickbait detection. It allows users to create and manage presets for different filtering configurations.
+This project is a browser extension that helps users filter YouTube content based on custom keyword lists, clickbait detection, and machine learning. It allows users to create and manage presets for different filtering configurations and train the algorithm for better content filtering.
 
 ## 🏗️ Architecture
 The application is built using a modern React-based architecture with the following key components:
@@ -20,6 +20,7 @@ The application is built using a modern React-based architecture with the follow
 - **State Management**: Local state management with React hooks and localStorage for persistence.
 - **Browser Extension**: A Chrome extension that filters YouTube content in real-time.
 - **Communication**: Cross-domain communication between the web app and the extension using localStorage and Chrome Messages.
+- **Machine Learning**: Local training system for improving content filtering.
 
 ## 🛠️ Techstack
 - **Frontend**:
@@ -35,6 +36,7 @@ The application is built using a modern React-based architecture with the follow
 - **Storage**:
   - localStorage (for preset data)
   - sessionStorage (for temporary data)
+  - IndexedDB (for training data)
 
 ## 📁 Project Structure
 - **`src/`**: Contains the main application code.
@@ -42,17 +44,21 @@ The application is built using a modern React-based architecture with the follow
   - **`hooks/`**: Custom React hooks for state management.
   - **`types/`**: TypeScript type definitions.
   - **`data/`**: Static data like preset templates.
+  - **`training/`**: Machine learning components.
 - **`extension/`**: Contains the browser extension code.
   - **`content/`**: Content scripts that run on YouTube.
   - **`background/`**: Background scripts for the extension.
   - **`popup/`**: UI for the extension popup.
+  - **`webapp/`**: Web application components.
+  - **`assets/`**: Extension assets and resources.
 
 ## 🔄 Key Features
 - **Preset Management**: Create, edit, and manage custom presets for content filtering.
 - **Keyword Filtering**: Filter videos based on custom keyword lists.
 - **Clickbait Detection**: Automatically detect and filter clickbait content.
-- **Channel Blocking**: Block specific channels from appearing in your feed.
 - **Real-time Filtering**: Filter content as you browse YouTube.
+- **Algorithm Training**: Train the system to improve filtering based on user behavior.
+- **Long-term Learning**: Improve filtering accuracy over time through machine learning.
 
 ## 🚀 Getting Started
 1. **Clone the repository**:
@@ -81,42 +87,48 @@ The application is built using a modern React-based architecture with the follow
   - **`PresetManager`**: Handles saving, loading, and managing keyword presets.
   - **`ClickbaitDetector`**: Detects clickbait patterns in video titles.
   - **`BrowserController`**: Controls browser settings for the extension.
+  - **`AlgorithmTrainer`**: Manages machine learning training.
 
 ## 🔧 Development
 - **Frontend**: The frontend is built with React and TypeScript, using Vite for fast development and building.
 - **Extension**: The extension is built using the Chrome Extension API, with content scripts for YouTube interaction.
+- **Training**: The system includes a local machine learning component for improving filtering accuracy.
 
 ## 📊 Future Enhancements
 - Add more advanced clickbait detection patterns.
 - Improve keyword matching algorithms.
 - Add support for regular expressions in keyword lists.
 - Enhance the UI/UX for better user experience.
+- Improve algorithm training accuracy.
+- Add more training data sources.
 
 ## 📋 Development Plan
 
 ### Phase 1: Core Structure (Days 1-2)
-- [ ] Remove algorithm training and profile management
-- [ ] Set up basic extension structure
-- [ ] Create content script for YouTube page interaction
-- [ ] Implement basic keyword filtering logic
+- [ ] Review and update existing extension structure
+- [ ] Update content scripts for new filtering logic
+- [ ] Implement basic keyword filtering
+- [ ] Set up algorithm training structure
 
 ### Phase 2: Preset System (Days 3-4)
 - [ ] Redesign preset system for keyword lists
 - [ ] Create preset management UI
 - [ ] Implement preset storage in localStorage
 - [ ] Add preset import/export functionality
+- [ ] Set up training data storage
 
 ### Phase 3: Content Filtering (Days 5-7)
 - [ ] Implement keyword matching system
 - [ ] Add clickbait detection patterns
-- [ ] Create channel blocking functionality
 - [ ] Add real-time content filtering
+- [ ] Implement basic algorithm training
 
 ### Phase 4: UI/UX (Days 8-9)
 - [ ] Design and implement extension popup
 - [ ] Create settings interface
 - [ ] Add toggle controls for features
 - [ ] Implement visual feedback for filtered content
+- [ ] Add training progress indicators
 
 ### Phase 5: Testing & Polish (Days 10-12)
 - [ ] Test on different YouTube pages
@@ -124,27 +136,30 @@ The application is built using a modern React-based architecture with the follow
 - [ ] Bug fixes
 - [ ] Final UI polish
 - [ ] Documentation updates
+- [ ] Training system validation
 
 ### Key Components to Implement:
 1. **ContentFilter**
    - Keyword matching
    - Clickbait detection
-   - Channel blocking
+   - Algorithm integration
 
 2. **PresetManager**
    - Keyword list management
    - Preset storage
    - Import/Export
+   - Training data management
 
 3. **YouTubeInterface**
    - Content script for YouTube
    - Real-time filtering
    - Visual feedback
+   - Training data collection
 
 4. **Settings**
    - Feature toggles
    - Keyword management
-   - Channel blocking list
+   - Training preferences
 
 ## 📄 License
 This project is licensed under the MIT License. See the LICENSE file for details.
